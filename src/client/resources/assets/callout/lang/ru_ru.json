@@ -1,0 +1,53 @@
+{
+  "modmenu.nameTranslation.callout": "Callout",
+  "modmenu.descriptionTranslation.callout": "Клиентские уведомления по чату, история упоминаний, regex-триггеры и расширенная прокрутка чата.",
+  "modmenu.summaryTranslation.callout": "Уведомления и история упоминаний",
+
+  "callout.screen.title": "Callout",
+
+  "callout.section.main_trigger": "Основной триггер",
+  "callout.section.additional_triggers": "Дополнительные триггеры",
+
+  "callout.field.word": "Слово",
+  "callout.field.match_mode": "Режим",
+  "callout.field.sound": "ID звука",
+  "callout.field.volume": "Громк.",
+  "callout.field.pitch": "Тон",
+
+  "callout.hint.nickname_word": "Ник или шаблон",
+  "callout.hint.word": "Слово или regex",
+  "callout.hint.sound": "minecraft:block.note_block.pling",
+  "callout.hint.volume": "1.0",
+  "callout.hint.pitch": "1.0",
+
+  "callout.option.enabled": "Включен: %s",
+  "callout.option.case_sensitive": "Учитывать регистр: %s",
+  "callout.option.own_messages": "Свои сообщения: %s",
+
+  "callout.state.on": "ВКЛ",
+  "callout.state.off": "ВЫКЛ",
+  "callout.match.text": "Текст",
+  "callout.match.regex": "Regex",
+
+  "callout.button.save": "Сохранить",
+  "callout.button.cancel": "Отмена",
+  "callout.button.close": "Закрыть",
+
+  "callout.message.self_test_hint": "Callout увидел ваш ник и проиграл тестовый звук. Свои сообщения по умолчанию игнорируются; включите \"Свои сообщения\" в Mod Menu, если хотите получать уведомления на них постоянно.",
+  "callout.message.self_test_detected": "Ник обнаружен; тестовый звук проигран.",
+  "callout.message.self_test_ignored": "Свои сообщения по умолчанию игнорируются.",
+  "callout.message.self_test_action": "Включите \"Свои сообщения\" в Mod Menu, чтобы получать уведомления на собственный чат.",
+
+  "key.category.callout.main": "Callout",
+  "key.callout.ping_history": "Открыть историю пингов (Ctrl+K)",
+
+  "callout.history.title": "История пингов",
+  "callout.history.previous": "Назад",
+  "callout.history.next": "Далее",
+  "callout.history.clear": "Очистить",
+  "callout.history.empty": "Пингов пока не было.",
+  "callout.history.count": "%s / 100 пингов · страница %s/%s",
+  "callout.history.entry_header": "#%s · %s · %s · %s · %s",
+  "callout.history.nickname_trigger": "ник",
+  "callout.history.sender.system": "Сервер"
+}

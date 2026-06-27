@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "callout",
+  "version": "${version}",
+  "name": "Callout",
+  "description": "Client-side chat alerts, mention history, regex triggers, and extended chat scrollback.",
+  "authors": [
+    "LTS_Server"
+  ],
+  "contact": {
+    "sources": "https://github.com/ServChan/Callout",
+    "issues": "https://github.com/ServChan/Callout/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/callout/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "org.lts.callout.CalloutClient"
+    ],
+    "modmenu": [
+      "org.lts.callout.compat.CalloutModMenu"
+    ]
+  },
+  "mixins": [
+    {
+      "config": "callout.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": ">=26.1.2",
+    "java": ">=25",
+    "fabric-message-api-v1": "*",
+    "fabric-key-mapping-api-v1": "*",
+    "fabric-lifecycle-events-v1": "*"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}

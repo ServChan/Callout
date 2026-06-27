@@ -1,0 +1,53 @@
+{
+  "modmenu.nameTranslation.callout": "Callout",
+  "modmenu.descriptionTranslation.callout": "Client-side chat alerts, mention history, regex triggers, and extended chat scrollback.",
+  "modmenu.summaryTranslation.callout": "Chat alerts and mention history",
+
+  "callout.screen.title": "Callout",
+
+  "callout.section.main_trigger": "Main trigger",
+  "callout.section.additional_triggers": "Additional triggers",
+
+  "callout.field.word": "Word",
+  "callout.field.match_mode": "Mode",
+  "callout.field.sound": "Sound id",
+  "callout.field.volume": "Volume",
+  "callout.field.pitch": "Pitch",
+
+  "callout.hint.nickname_word": "Nickname word",
+  "callout.hint.word": "Word or regex",
+  "callout.hint.sound": "minecraft:block.note_block.pling",
+  "callout.hint.volume": "1.0",
+  "callout.hint.pitch": "1.0",
+
+  "callout.option.enabled": "Enabled: %s",
+  "callout.option.case_sensitive": "Case sensitive: %s",
+  "callout.option.own_messages": "Own messages: %s",
+
+  "callout.state.on": "On",
+  "callout.state.off": "Off",
+  "callout.match.text": "Text",
+  "callout.match.regex": "Regex",
+
+  "callout.button.save": "Save",
+  "callout.button.cancel": "Cancel",
+  "callout.button.close": "Close",
+
+  "callout.message.self_test_hint": "Callout detected your nickname and played the test sound. Own messages are ignored by default; enable \"Own messages\" in Mod Menu if you want them to trigger alerts.",
+  "callout.message.self_test_detected": "Nickname detected; test sound played.",
+  "callout.message.self_test_ignored": "Own messages are ignored by default.",
+  "callout.message.self_test_action": "Enable \"Own messages\" in Mod Menu to trigger alerts from your own chat.",
+
+  "key.category.callout.main": "Callout",
+  "key.callout.ping_history": "Open ping history (Ctrl+K)",
+
+  "callout.history.title": "Ping History",
+  "callout.history.previous": "Previous",
+  "callout.history.next": "Next",
+  "callout.history.clear": "Clear",
+  "callout.history.empty": "No pings recorded yet.",
+  "callout.history.count": "%s / 100 pings · page %s/%s",
+  "callout.history.entry_header": "#%s · %s · %s · %s · %s",
+  "callout.history.nickname_trigger": "nickname",
+  "callout.history.sender.system": "Server"
+}
