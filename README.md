@@ -39,7 +39,7 @@ Callout добавляет к обычному чату Minecraft:
 
 ### Установка
 Для работы нужны:
-- [Fabric Loader](https://fabricmc.net/use/installer/) (>= 0.19.3)
+- [Fabric Loader](https://fabricmc.net/use/installer/) (>= 0.19.0)
 - [Fabric API](https://modrinth.com/mod/fabric-api)
 
 Рекомендуется:
@@ -52,7 +52,7 @@ Callout добавляет к обычному чату Minecraft:
 ### Совместимость
 - Minecraft `26.1.2`
 - Java `25`
-- Fabric Loader `0.19.3+`
+- Fabric Loader `0.19.0+`
 - Текущая версия мода в проекте: `1.0.0`
 
 Требования для сборки:
@@ -112,7 +112,7 @@ Available settings in the config screen (via Mod Menu):
 
 ### Installation
 Required:
-- [Fabric Loader](https://fabricmc.net/use/installer/) (>= 0.19.3)
+- [Fabric Loader](https://fabricmc.net/use/installer/) (>= 0.19.0)
 - [Fabric API](https://modrinth.com/mod/fabric-api)
 
 Recommended:
@@ -125,7 +125,7 @@ Important:
 ### Compatibility
 - Minecraft `26.1.2`
 - Java `25`
-- Fabric Loader `0.19.3+`
+- Fabric Loader `0.19.0+`
 - Current project mod version: `1.0.0`
 
 ### Build
