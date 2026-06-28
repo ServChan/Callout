@@ -25,6 +25,11 @@ public class CalloutConfig {
     public boolean caseSensitive = false;
     public boolean pingOwnMessages = false;
     public boolean selfTestHintShown = false;
+    public int maxPingHistory = 100;
+    public int contextBefore = 5;
+    public int contextAfter = 5;
+    public boolean persistHistory = true;
+    public boolean clearHistoryOnScopeChange = false;
     public Trigger nickname = new Trigger("", "minecraft:block.note_block.pling", 1.0F, 1.0F);
     public List<Trigger> triggers = new ArrayList<>();
 
@@ -121,6 +126,11 @@ public class CalloutConfig {
         copy.caseSensitive = caseSensitive;
         copy.pingOwnMessages = pingOwnMessages;
         copy.selfTestHintShown = selfTestHintShown;
+        copy.maxPingHistory = maxPingHistory;
+        copy.contextBefore = contextBefore;
+        copy.contextAfter = contextAfter;
+        copy.persistHistory = persistHistory;
+        copy.clearHistoryOnScopeChange = clearHistoryOnScopeChange;
         copy.nickname = nickname == null ? null : nickname.copy();
         copy.triggers = new ArrayList<>();
         if (triggers != null) {
@@ -135,6 +145,9 @@ public class CalloutConfig {
         if (config.nickname == null) {
             config.nickname = new Trigger("", "minecraft:block.note_block.pling", 1.0F, 1.0F);
         }
+        config.maxPingHistory = clamp(config.maxPingHistory, 1, 1000);
+        config.contextBefore = clamp(config.contextBefore, 0, 20);
+        config.contextAfter = clamp(config.contextAfter, 0, 20);
         config.nickname.sanitize();
 
         if (config.triggers == null) {
@@ -143,6 +156,10 @@ public class CalloutConfig {
         config.triggers.forEach(Trigger::sanitize);
 
         return config;
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     public static class Trigger {

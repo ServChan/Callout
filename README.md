@@ -15,13 +15,14 @@ Callout добавляет к обычному чату Minecraft:
 - поддержку регулярных выражений (Regex) для сложного поиска упоминаний;
 - настраиваемую громкость и высоту тона (Pitch) для каждого триггера;
 - удобное графическое окно истории упоминаний с подсветкой целевой строки и контекстом;
+- фильтр истории по миру или серверу, чтобы быстро разобрать AFK-пинги из нужной сессии;
 - сохранение истории между выходами из мира и перезапусками игры.
 
 ### Особенности
 Мод включает:
 - специальную очистку текста от служебных артефактов и тегов сторонних модов (например, ChatHeads);
 - фильтрацию технических префиксов отправителя в одиночной игре или LAN, чтобы исключить ложные срабатывания;
-- отображение 5 сообщений контекста до и 5 сообщений после целевого пинга;
+- настраиваемое отображение сообщений контекста до и после целевого пинга;
 - плавную навигацию с поддержкой пагинации и колесика мыши в меню истории;
 - персистентное сохранение истории в файл `config/callout_history.json`;
 - интеграцию с Mod Menu для удобного доступа к настройкам.
@@ -35,7 +36,8 @@ Callout добавляет к обычному чату Minecraft:
 - `Учитывать регистр`: включение/выключение чувствительности к регистру букв;
 - `Пинговать свои`: разрешает или запрещает звуковые пинги от собственных сообщений в чате;
 - `Основной триггер (Никнейм)`: слово, звук, громкость и тон для вашего ника;
-- `Дополнительные триггеры`: до 5 независимых триггеров с выбором режима `Text` / `Regex`.
+- `Дополнительные триггеры`: список независимых триггеров с добавлением, удалением и выбором режима `Text` / `Regex`;
+- настройки истории: максимальное число пингов, размер контекста до/после, сохранение истории и очистка при смене мира или сервера.
 
 ### Установка
 Для работы нужны:
@@ -53,7 +55,7 @@ Callout добавляет к обычному чату Minecraft:
 - Minecraft `26.1.2`
 - Java `25`
 - Fabric Loader `0.19.0+`
-- Текущая версия мода в проекте: `1.0.0`
+- Текущая версия мода в проекте: `1.0.1`
 
 Требования для сборки:
 - JDK 25
@@ -88,13 +90,14 @@ Callout extends standard Minecraft chat with:
 - support for regular expressions (Regex) for advanced pattern matching;
 - customizable volume and pitch settings for each trigger;
 - a sleek, dark-slate mention history GUI with highlighted ping lines and context;
+- world/server filtering for quickly reviewing AFK mentions from a specific session;
 - persistent history storage that survives exiting worlds and restarting the game.
 
 ### Features
 The mod includes:
 - automatic text sanitization to clean up third-party mod tags (e.g. ChatHeads artifacts);
 - singleplayer/LAN sender prefix filtering to prevent false self-pings;
-- 5 context messages before and 5 context messages after each targeted ping;
+- configurable context messages before and after each targeted ping;
 - smooth navigation with mouse wheel scrolling and pagination in the history screen;
 - persistent JSON storage in `config/callout_history.json`;
 - Mod Menu integration for seamless access to configuration.
@@ -108,7 +111,8 @@ Available settings in the config screen (via Mod Menu):
 - `Case Sensitive`: toggles letter case matching;
 - `Ping Own`: enables or disables audio alerts for your own chat messages;
 - `Main Trigger (Nickname)`: custom word, sound, volume, and pitch for your username;
-- `Additional Triggers`: up to 5 independent triggers with configurable `Text` / `Regex` modes.
+- `Additional Triggers`: an editable list of independent triggers with add/remove controls and configurable `Text` / `Regex` modes;
+- history settings: maximum stored pings, before/after context size, persistent storage, and clearing on world/server switch.
 
 ### Installation
 Required:
@@ -126,7 +130,7 @@ Important:
 - Minecraft `26.1.2`
 - Java `25`
 - Fabric Loader `0.19.0+`
-- Current project mod version: `1.0.0`
+- Current project mod version: `1.0.1`
 
 ### Build
 Requirements:

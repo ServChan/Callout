@@ -1,12 +1,13 @@
 {
   "modmenu.nameTranslation.callout": "Callout",
-  "modmenu.descriptionTranslation.callout": "Client-side chat alerts, mention history, regex triggers, and extended chat scrollback.",
+  "modmenu.descriptionTranslation.callout": "Client-side chat alerts, AFK mention history with context, regex triggers, and extended chat scrollback.",
   "modmenu.summaryTranslation.callout": "Chat alerts and mention history",
 
   "callout.screen.title": "Callout",
 
   "callout.section.main_trigger": "Main trigger",
   "callout.section.additional_triggers": "Additional triggers",
+  "callout.section.history": "History",
 
   "callout.field.word": "Word",
   "callout.field.match_mode": "Mode",
@@ -19,10 +20,15 @@
   "callout.hint.sound": "minecraft:block.note_block.pling",
   "callout.hint.volume": "1.0",
   "callout.hint.pitch": "1.0",
+  "callout.hint.max_pings": "Max pings",
+  "callout.hint.context_before": "Before",
+  "callout.hint.context_after": "After",
 
   "callout.option.enabled": "Enabled: %s",
   "callout.option.case_sensitive": "Case sensitive: %s",
   "callout.option.own_messages": "Own messages: %s",
+  "callout.option.persist_history": "Persist history: %s",
+  "callout.option.clear_on_scope_change": "Clear on world switch: %s",
 
   "callout.state.on": "On",
   "callout.state.off": "Off",
@@ -32,6 +38,10 @@
   "callout.button.save": "Save",
   "callout.button.cancel": "Cancel",
   "callout.button.close": "Close",
+  "callout.button.add_trigger": "Add",
+  "callout.button.remove": "Remove",
+  "callout.triggers.page": "Page %s/%s",
+  "callout.error.invalid_regex": "Invalid regex: %s",
 
   "callout.message.self_test_hint": "Callout detected your nickname and played the test sound. Own messages are ignored by default; enable \"Own messages\" in Mod Menu if you want them to trigger alerts.",
   "callout.message.self_test_detected": "Nickname detected; test sound played.",
@@ -46,8 +56,15 @@
   "callout.history.next": "Next",
   "callout.history.clear": "Clear",
   "callout.history.empty": "No pings recorded yet.",
-  "callout.history.count": "%s / 100 pings · page %s/%s",
+  "callout.history.count": "%s / %s pings · page %s/%s",
   "callout.history.entry_header": "#%s · %s · %s · %s · %s",
   "callout.history.nickname_trigger": "nickname",
-  "callout.history.sender.system": "Server"
+  "callout.history.sender.system": "Server",
+  "callout.history.search_hint": "Search...",
+  "callout.history.scope_filter": "World: %s",
+  "callout.history.scope_all": "All",
+  "callout.history.scope_unknown": "Unknown",
+  "callout.history.sort.newest": "Newest ↑",
+  "callout.history.sort.oldest": "Oldest ↓",
+  "callout.history.copied": "Copied!"
 }

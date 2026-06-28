@@ -23,9 +23,6 @@ import java.util.Locale;
 
 public final class CalloutHistory {
     private static final int MAX_CHAT_BUFFER = 256;
-    private static final int MAX_PINGS = 100;
-    private static final int CONTEXT_BEFORE = 5;
-    private static final int CONTEXT_AFTER = 5;
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -36,11 +33,15 @@ public final class CalloutHistory {
     private static final List<PingEntry> awaitingAfter = new ArrayList<>();
     private static final Deque<PendingPing> pendingPings = new ArrayDeque<>();
     private static long nextSequence;
+    private static String currentScope = "";
 
     private CalloutHistory() {
     }
 
     public static synchronized void load() {
+        if (!CalloutConfig.loadIfChanged().persistHistory) {
+            return;
+        }
         if (!Files.exists(HISTORY_PATH)) {
             return;
         }
@@ -49,7 +50,13 @@ public final class CalloutHistory {
             List<PingEntry> loaded = GSON.fromJson(reader, type);
             if (loaded != null) {
                 pings.clear();
-                pings.addAll(loaded);
+                for (PingEntry entry : loaded) {
+                    PingEntry normalized = normalize(entry);
+                    if (normalized != null) {
+                        pings.addLast(normalized);
+                    }
+                }
+                trimHistory(CalloutConfig.loadIfChanged().maxPingHistory);
             }
         } catch (Exception exception) {
             CalloutClient.LOGGER.warn("Failed to load history from {}", HISTORY_PATH, exception);
@@ -57,6 +64,9 @@ public final class CalloutHistory {
     }
 
     public static synchronized void save() {
+        if (!CalloutConfig.loadIfChanged().persistHistory) {
+            return;
+        }
         try {
             Files.createDirectories(HISTORY_PATH.getParent());
             try (Writer writer = Files.newBufferedWriter(HISTORY_PATH)) {
@@ -68,6 +78,7 @@ public final class CalloutHistory {
     }
 
     public static synchronized ChatLine observeDisplayed(Component message) {
+        CalloutConfig config = CalloutConfig.loadIfChanged();
         String text = sanitize(message == null ? "" : message.getString());
         ChatLine line = new ChatLine(
                 nextSequence++,
@@ -76,7 +87,7 @@ public final class CalloutHistory {
         );
 
         chatBuffer.addLast(line);
-        while (chatBuffer.size() > MAX_CHAT_BUFFER) {
+        while (chatBuffer.size() > maxChatBuffer(config)) {
             chatBuffer.removeFirst();
         }
 
@@ -100,13 +111,31 @@ public final class CalloutHistory {
                 sender == null || sender.isBlank() ? Component.translatable("callout.history.sender.system").getString() : sender,
                 matchText == null ? "" : matchText,
                 trigger.word,
-                trigger.regex
+                trigger.regex,
+                currentScope
         );
+
+        if (!pendingPing.matchText.isBlank() && attachToRecentLine(pendingPing)) {
+            return;
+        }
 
         pendingPings.addLast(pendingPing);
         while (pendingPings.size() > 16) {
             pendingPings.removeFirst();
         }
+    }
+
+    private static boolean attachToRecentLine(PendingPing pendingPing) {
+        List<ChatLine> buffer = new ArrayList<>(chatBuffer);
+        if (buffer.isEmpty()) {
+            return false;
+        }
+        ChatLine line = buffer.get(buffer.size() - 1);
+        if (lineMatchesPending(line, pendingPing)) {
+            recordPing(line, pendingPing);
+            return true;
+        }
+        return false;
     }
 
     private static void attachPendingPings(ChatLine line) {
@@ -130,11 +159,11 @@ public final class CalloutHistory {
         }
         String msg = line.message().toLowerCase(Locale.ROOT);
         String match = pendingPing.matchText.toLowerCase(Locale.ROOT);
-        String trigger = pendingPing.trigger == null ? "" : pendingPing.trigger.toLowerCase(Locale.ROOT);
-        return msg.contains(match) || (!trigger.isBlank() && msg.contains(trigger));
+        return msg.contains(match);
     }
 
     private static void recordPing(ChatLine pingLine, PendingPing pendingPing) {
+        CalloutConfig config = CalloutConfig.loadIfChanged();
         List<ChatLine> buffer = new ArrayList<>(chatBuffer);
         int index = -1;
         for (int i = 0; i < buffer.size(); i++) {
@@ -146,7 +175,7 @@ public final class CalloutHistory {
 
         List<ChatLine> before = new ArrayList<>();
         if (index > 0) {
-            int from = Math.max(0, index - CONTEXT_BEFORE);
+            int from = Math.max(0, index - config.contextBefore);
             for (int i = from; i < index; i++) {
                 before.add(buffer.get(i));
             }
@@ -157,28 +186,27 @@ public final class CalloutHistory {
                 pendingPing.sender,
                 pendingPing.trigger,
                 pendingPing.regex,
+                pendingPing.scope,
                 before,
                 pingLine
         );
 
         pings.addFirst(entry);
-        while (pings.size() > MAX_PINGS) {
-            PingEntry removed = pings.removeLast();
-            awaitingAfter.remove(removed);
-        }
+        trimHistory(config.maxPingHistory);
         awaitingAfter.add(entry);
         save();
     }
 
     private static void updateAwaitingAfter(ChatLine line) {
+        int contextAfter = CalloutConfig.loadIfChanged().contextAfter;
         boolean changed = false;
         for (int i = awaitingAfter.size() - 1; i >= 0; i--) {
             PingEntry entry = awaitingAfter.get(i);
-            if (line.sequence() > entry.pingLine.sequence() && entry.after.size() < CONTEXT_AFTER) {
+            if (line.sequence() > entry.pingLine.sequence() && entry.after.size() < contextAfter) {
                 entry.after.add(line);
                 changed = true;
             }
-            if (entry.after.size() >= CONTEXT_AFTER) {
+            if (entry.after.size() >= contextAfter) {
                 awaitingAfter.remove(i);
             }
         }
@@ -189,11 +217,19 @@ public final class CalloutHistory {
 
     public static synchronized List<ChatLine> afterLines(PingEntry entry) {
         fillAfterFromBuffer(entry);
-        return Collections.unmodifiableList(entry.after);
+        return Collections.unmodifiableList(safeLines(entry.after));
     }
 
     public static synchronized List<PingEntry> entries() {
         return Collections.unmodifiableList(new ArrayList<>(pings));
+    }
+
+    public static synchronized void setCurrentScope(String scope) {
+        currentScope = scope == null ? "" : scope;
+    }
+
+    public static synchronized String currentScope() {
+        return currentScope;
     }
 
     public static synchronized void resetSessionBuffer() {
@@ -214,35 +250,68 @@ public final class CalloutHistory {
     }
 
     private static void fillAfterFromBuffer(PingEntry entry) {
-        if (entry.after.size() >= CONTEXT_AFTER) {
+        int contextAfter = CalloutConfig.loadIfChanged().contextAfter;
+        List<ChatLine> after = safeLines(entry.after);
+        if (after.size() >= contextAfter) {
             return;
         }
 
         for (ChatLine line : chatBuffer) {
-            if (line.sequence() <= entry.pingLine.sequence()) {
+            if (entry.pingLine == null || line.sequence() <= entry.pingLine.sequence()) {
                 continue;
             }
             boolean exists = false;
-            for (ChatLine existing : entry.after) {
+            for (ChatLine existing : after) {
                 if (existing.sequence() == line.sequence()) {
                     exists = true;
                     break;
                 }
             }
             if (!exists) {
-                entry.after.add(line);
+                after.add(line);
             }
-            if (entry.after.size() >= CONTEXT_AFTER) {
+            if (after.size() >= contextAfter) {
                 awaitingAfter.remove(entry);
                 return;
             }
         }
     }
 
+    private static void trimHistory(int maxPingHistory) {
+        while (pings.size() > maxPingHistory) {
+            PingEntry removed = pings.removeLast();
+            awaitingAfter.remove(removed);
+        }
+    }
+
+    private static PingEntry normalize(PingEntry entry) {
+        if (entry == null || entry.pingLine == null) {
+            return null;
+        }
+        return new PingEntry(
+                entry.time,
+                entry.sender,
+                entry.trigger,
+                entry.regex,
+                entry.scope,
+                safeLines(entry.before),
+                entry.pingLine,
+                safeLines(entry.after)
+        );
+    }
+
+    private static List<ChatLine> safeLines(List<ChatLine> lines) {
+        return lines == null ? new ArrayList<>() : lines;
+    }
+
+    private static int maxChatBuffer(CalloutConfig config) {
+        return Math.max(MAX_CHAT_BUFFER, config.contextBefore + config.contextAfter + config.maxPingHistory);
+    }
+
     public record ChatLine(long sequence, String time, String message) {
     }
 
-    private record PendingPing(String sender, String matchText, String trigger, boolean regex) {
+    private record PendingPing(String sender, String matchText, String trigger, boolean regex, String scope) {
     }
 
     public static final class PingEntry {
@@ -250,19 +319,24 @@ public final class CalloutHistory {
         public final String sender;
         public final String trigger;
         public final boolean regex;
+        public final String scope;
         public final List<ChatLine> before;
         public final ChatLine pingLine;
         public final List<ChatLine> after;
 
-        public PingEntry(String time, String sender, String trigger, boolean regex, List<ChatLine> before, ChatLine pingLine) {
+        public PingEntry(String time, String sender, String trigger, boolean regex, String scope, List<ChatLine> before, ChatLine pingLine) {
+            this(time, sender, trigger, regex, scope, before, pingLine, new ArrayList<>());
+        }
+
+        public PingEntry(String time, String sender, String trigger, boolean regex, String scope, List<ChatLine> before, ChatLine pingLine, List<ChatLine> after) {
             this.time = time;
             this.sender = sender;
             this.trigger = trigger;
             this.regex = regex;
+            this.scope = scope == null ? "" : scope;
             this.before = before == null ? new ArrayList<>() : before;
             this.pingLine = pingLine;
-            this.after = new ArrayList<>();
+            this.after = after == null ? new ArrayList<>() : after;
         }
     }
 }
-

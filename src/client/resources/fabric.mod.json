@@ -3,7 +3,7 @@
   "id": "callout",
   "version": "${version}",
   "name": "Callout",
-  "description": "Client-side chat alerts, mention history, regex triggers, and extended chat scrollback.",
+  "description": "Client-side chat alerts with custom text/regex triggers, sound notifications, extended chat scrollback, and persistent AFK mention history with context.",
   "authors": [
     "LTS_Server"
   ],

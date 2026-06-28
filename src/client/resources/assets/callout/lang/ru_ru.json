@@ -1,12 +1,13 @@
 {
   "modmenu.nameTranslation.callout": "Callout",
-  "modmenu.descriptionTranslation.callout": "Клиентские уведомления по чату, история упоминаний, regex-триггеры и расширенная прокрутка чата.",
+  "modmenu.descriptionTranslation.callout": "Клиентские уведомления по чату, история AFK-упоминаний с контекстом, regex-триггеры и расширенная прокрутка чата.",
   "modmenu.summaryTranslation.callout": "Уведомления и история упоминаний",
 
   "callout.screen.title": "Callout",
 
   "callout.section.main_trigger": "Основной триггер",
   "callout.section.additional_triggers": "Дополнительные триггеры",
+  "callout.section.history": "История",
 
   "callout.field.word": "Слово",
   "callout.field.match_mode": "Режим",
@@ -19,10 +20,15 @@
   "callout.hint.sound": "minecraft:block.note_block.pling",
   "callout.hint.volume": "1.0",
   "callout.hint.pitch": "1.0",
+  "callout.hint.max_pings": "Макс. пингов",
+  "callout.hint.context_before": "До",
+  "callout.hint.context_after": "После",
 
   "callout.option.enabled": "Включен: %s",
   "callout.option.case_sensitive": "Учитывать регистр: %s",
   "callout.option.own_messages": "Свои сообщения: %s",
+  "callout.option.persist_history": "Сохранять историю: %s",
+  "callout.option.clear_on_scope_change": "Очищать при смене мира: %s",
 
   "callout.state.on": "ВКЛ",
   "callout.state.off": "ВЫКЛ",
@@ -32,6 +38,10 @@
   "callout.button.save": "Сохранить",
   "callout.button.cancel": "Отмена",
   "callout.button.close": "Закрыть",
+  "callout.button.add_trigger": "Добавить",
+  "callout.button.remove": "Удалить",
+  "callout.triggers.page": "Стр. %s/%s",
+  "callout.error.invalid_regex": "Некорректный regex: %s",
 
   "callout.message.self_test_hint": "Callout увидел ваш ник и проиграл тестовый звук. Свои сообщения по умолчанию игнорируются; включите \"Свои сообщения\" в Mod Menu, если хотите получать уведомления на них постоянно.",
   "callout.message.self_test_detected": "Ник обнаружен; тестовый звук проигран.",
@@ -46,8 +56,15 @@
   "callout.history.next": "Далее",
   "callout.history.clear": "Очистить",
   "callout.history.empty": "Пингов пока не было.",
-  "callout.history.count": "%s / 100 пингов · страница %s/%s",
+  "callout.history.count": "%s / %s пингов · страница %s/%s",
   "callout.history.entry_header": "#%s · %s · %s · %s · %s",
   "callout.history.nickname_trigger": "ник",
-  "callout.history.sender.system": "Сервер"
+  "callout.history.sender.system": "Сервер",
+  "callout.history.search_hint": "Поиск...",
+  "callout.history.scope_filter": "Мир: %s",
+  "callout.history.scope_all": "Все",
+  "callout.history.scope_unknown": "Неизвестно",
+  "callout.history.sort.newest": "Новые ↑",
+  "callout.history.sort.oldest": "Старые ↓",
+  "callout.history.copied": "Скопировано!"
 }
