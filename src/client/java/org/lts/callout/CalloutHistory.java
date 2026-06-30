@@ -25,7 +25,33 @@ public final class CalloutHistory {
     private static final int MAX_CHAT_BUFFER = 256;
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson GSON = new GsonBuilder()
+            .setPrettyPrinting()
+            .registerTypeHierarchyAdapter(Component.class, new com.google.gson.JsonSerializer<Component>() {
+                @Override
+                public com.google.gson.JsonElement serialize(Component src, java.lang.reflect.Type typeOfSrc, com.google.gson.JsonSerializationContext context) {
+                    try {
+                        return net.minecraft.network.chat.ComponentSerialization.CODEC
+                                .encodeStart(com.mojang.serialization.JsonOps.INSTANCE, src)
+                                .getOrThrow(IllegalStateException::new);
+                    } catch (Exception e) {
+                        return com.google.gson.JsonNull.INSTANCE;
+                    }
+                }
+            })
+            .registerTypeHierarchyAdapter(Component.class, new com.google.gson.JsonDeserializer<Component>() {
+                @Override
+                public Component deserialize(com.google.gson.JsonElement json, java.lang.reflect.Type typeOfT, com.google.gson.JsonDeserializationContext context) {
+                    try {
+                        return net.minecraft.network.chat.ComponentSerialization.CODEC
+                                .parse(com.mojang.serialization.JsonOps.INSTANCE, json)
+                                .getOrThrow(IllegalStateException::new);
+                    } catch (Exception e) {
+                        return Component.empty();
+                    }
+                }
+            })
+            .create();
     private static final Path HISTORY_PATH = FabricLoader.getInstance().getConfigDir().resolve("callout_history.json");
 
     private static final Deque<ChatLine> chatBuffer = new ArrayDeque<>();
@@ -77,13 +103,19 @@ public final class CalloutHistory {
         }
     }
 
+    public static boolean isRestoringChat = false;
+
     public static synchronized ChatLine observeDisplayed(Component message) {
+        if (isRestoringChat) return null;
+        
         CalloutConfig config = CalloutConfig.loadIfChanged();
         String text = sanitize(message == null ? "" : message.getString());
+
         ChatLine line = new ChatLine(
                 nextSequence++,
                 LocalTime.now().format(TIME_FORMAT),
-                text
+                text,
+                message
         );
 
         chatBuffer.addLast(line);
@@ -224,6 +256,10 @@ public final class CalloutHistory {
         return Collections.unmodifiableList(new ArrayList<>(pings));
     }
 
+    public static synchronized List<ChatLine> getChatBuffer() {
+        return new ArrayList<>(chatBuffer);
+    }
+
     public static synchronized void setCurrentScope(String scope) {
         currentScope = scope == null ? "" : scope;
     }
@@ -236,6 +272,36 @@ public final class CalloutHistory {
         chatBuffer.clear();
         awaitingAfter.clear();
         pendingPings.clear();
+    }
+
+    public static synchronized void saveSessionBuffer(String scope) {
+        if (scope == null || scope.isBlank()) return;
+        Path path = FabricLoader.getInstance().getConfigDir().resolve("callout_sessions").resolve(scope.replaceAll("[^a-zA-Z0-9.-]", "_") + ".json");
+        try {
+            Files.createDirectories(path.getParent());
+            try (java.io.Writer writer = Files.newBufferedWriter(path)) {
+                GSON.toJson(new ArrayList<>(chatBuffer), writer);
+            }
+        } catch (Exception e) {
+            CalloutClient.LOGGER.warn("Failed to save session buffer to {}", path, e);
+        }
+    }
+
+    public static synchronized void loadSessionBuffer(String scope) {
+        chatBuffer.clear();
+        if (scope == null || scope.isBlank()) return;
+        Path path = FabricLoader.getInstance().getConfigDir().resolve("callout_sessions").resolve(scope.replaceAll("[^a-zA-Z0-9.-]", "_") + ".json");
+        if (!Files.exists(path)) return;
+        
+        try (java.io.Reader reader = Files.newBufferedReader(path)) {
+            java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<List<ChatLine>>(){}.getType();
+            List<ChatLine> loaded = GSON.fromJson(reader, type);
+            if (loaded != null) {
+                chatBuffer.addAll(loaded);
+            }
+        } catch (Exception e) {
+            CalloutClient.LOGGER.warn("Failed to load session buffer from {}", path, e);
+        }
     }
 
     public static synchronized void clear() {
@@ -308,7 +374,10 @@ public final class CalloutHistory {
         return Math.max(MAX_CHAT_BUFFER, config.contextBefore + config.contextAfter + config.maxPingHistory);
     }
 
-    public record ChatLine(long sequence, String time, String message) {
+    public record ChatLine(long sequence, String time, String message, Component component) {
+        public ChatLine(long sequence, String time, String message) {
+            this(sequence, time, message, null);
+        }
     }
 
     private record PendingPing(String sender, String matchText, String trigger, boolean regex, String scope) {

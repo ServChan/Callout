@@ -62,15 +62,30 @@ public class CalloutClient implements ClientModInitializer {
             String scope = currentScope(minecraft);
             CalloutHistory.setCurrentScope(scope);
             CalloutConfig config = CalloutConfig.loadIfChanged();
-            if (!lastScope.isBlank() && !lastScope.equals(scope) && config.clearHistoryOnScopeChange) {
-                CalloutHistory.clear();
+            
+            if (!wasInWorld) {
+                if (!lastScope.isBlank() && !lastScope.equals(scope) && config.clearHistoryOnScopeChange) {
+                    CalloutHistory.clear();
+                } else {
+                    CalloutHistory.loadSessionBuffer(scope);
+                    CalloutHistory.isRestoringChat = true;
+                    for (CalloutHistory.ChatLine line : CalloutHistory.getChatBuffer()) {
+                        if (line.component() != null) {
+                            try {
+                                minecraft.player.sendSystemMessage(line.component());
+                            } catch (Exception e) {
+                                LOGGER.warn("Failed to inject historical chat message", e);
+                            }
+                        }
+                    }
+                    CalloutHistory.isRestoringChat = false;
+                }
             }
             lastScope = scope;
         }
         if (wasInWorld && !isInWorld) {
+            CalloutHistory.saveSessionBuffer(lastScope);
             CalloutHistory.save();
-            CalloutHistory.resetSessionBuffer();
-            lastScope = "";
         }
         wasInWorld = isInWorld;
 

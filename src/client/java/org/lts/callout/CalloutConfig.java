@@ -20,6 +20,7 @@ public class CalloutConfig {
 
     private static CalloutConfig instance = defaults();
     private static long lastModified = -1L;
+    private static long lastCheckTime = 0L;
 
     public boolean enabled = true;
     public boolean caseSensitive = false;
@@ -49,6 +50,12 @@ public class CalloutConfig {
     }
 
     public static CalloutConfig loadIfChanged() {
+        long now = System.currentTimeMillis();
+        if (now - lastCheckTime < 1000) {
+            return instance;
+        }
+        lastCheckTime = now;
+
         try {
             long modified = Files.exists(CONFIG_PATH) ? Files.getLastModifiedTime(CONFIG_PATH).toMillis() : -1L;
             if (modified != lastModified) {

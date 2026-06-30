@@ -28,6 +28,7 @@ public class CalloutHistoryScreen extends Screen {
     private Button scopeButton;
     private boolean newestFirst = true;
     private int scopeIndex;
+    private List<CalloutHistory.PingEntry> cachedFilteredEntries;
 
     private String toastText;
     private int toastX;
@@ -100,6 +101,10 @@ public class CalloutHistoryScreen extends Screen {
     }
 
     private List<CalloutHistory.PingEntry> filteredEntries() {
+        if (cachedFilteredEntries != null) {
+            return cachedFilteredEntries;
+        }
+
         List<CalloutHistory.PingEntry> all = CalloutHistory.entries();
         String query = searchBox != null ? searchBox.getValue().trim().toLowerCase(Locale.ROOT) : "";
         String selectedScope = selectedScope();
@@ -115,8 +120,10 @@ public class CalloutHistoryScreen extends Screen {
         if (!newestFirst) {
             List<CalloutHistory.PingEntry> reversed = new ArrayList<>(result);
             Collections.reverse(reversed);
+            cachedFilteredEntries = reversed;
             return reversed;
         }
+        cachedFilteredEntries = result;
         return result;
     }
 
@@ -394,6 +401,7 @@ public class CalloutHistoryScreen extends Screen {
     }
 
     private void updateButtons() {
+        cachedFilteredEntries = null;
         int maxPage = maxPage();
         page = Math.min(page, maxPage);
         if (previousButton != null) {
