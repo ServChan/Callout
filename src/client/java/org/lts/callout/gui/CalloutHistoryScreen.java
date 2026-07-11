@@ -26,6 +26,8 @@ public class CalloutHistoryScreen extends Screen {
     private EditBox searchBox;
     private Button sortButton;
     private Button scopeButton;
+    private Button clearButton;
+    private long clearConfirmationUntil;
     private boolean newestFirst = true;
     private int scopeIndex;
     private List<CalloutHistory.PingEntry> cachedFilteredEntries;
@@ -79,10 +81,18 @@ public class CalloutHistoryScreen extends Screen {
             updateButtons();
         }).bounds(this.width / 2 - 103, y, 96, 20).build());
 
-        addRenderableWidget(Button.builder(Component.translatable("callout.history.clear"), button -> {
-            CalloutHistory.clear();
-            page = 0;
-            updateButtons();
+        clearButton = addRenderableWidget(Button.builder(Component.translatable("callout.history.clear"), button -> {
+            long now = System.currentTimeMillis();
+            if (now <= clearConfirmationUntil) {
+                CalloutHistory.clear();
+                clearConfirmationUntil = 0L;
+                button.setMessage(Component.translatable("callout.history.clear"));
+                page = 0;
+                updateButtons();
+            } else {
+                clearConfirmationUntil = now + 3000L;
+                button.setMessage(Component.translatable("callout.history.clear_confirm"));
+            }
         }).bounds(this.width / 2 + 7, y, 96, 20).build());
 
         addRenderableWidget(Button.builder(Component.translatable("callout.button.close"), button -> this.minecraft.setScreen(parent))
@@ -228,6 +238,11 @@ public class CalloutHistoryScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float tickDelta) {
+        if (clearButton != null && clearConfirmationUntil > 0L
+                && System.currentTimeMillis() > clearConfirmationUntil) {
+            clearConfirmationUntil = 0L;
+            clearButton.setMessage(Component.translatable("callout.history.clear"));
+        }
         graphics.fill(0, 0, this.width, this.height, 0xF00B0E14);
         graphics.fill(0, 0, this.width, 36, 0xFF141A24);
         graphics.centeredText(this.font, this.title, this.width / 2, 12, 0xFFFFFFFF);

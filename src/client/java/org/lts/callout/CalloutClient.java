@@ -3,6 +3,7 @@ package org.lts.callout;
 import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
@@ -35,6 +36,8 @@ public class CalloutClient implements ClientModInitializer {
     private static KeyMapping historyKey;
     private boolean wasInWorld = false;
     private String lastScope = "";
+    private int tickCount = 0;
+    private boolean disconnected = true;
 
     private static final Pattern SENDER_CHAT_PATTERN = Pattern.compile("(?:^|.*?[\\s\\[\\]<>👤])([a-zA-Z0-9_]{3,16})\\s*[:»>|-]+\\s*(.*)");
 
@@ -54,10 +57,21 @@ public class CalloutClient implements ClientModInitializer {
         });
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> handleMessage(message, message.getString(), null));
         ClientTickEvents.END_CLIENT_TICK.register(this::handleClientTick);
+        ClientLifecycleEvents.CLIENT_STOPPING.register(minecraft -> {
+            if (wasInWorld) {
+                CalloutHistory.saveSessionBuffer(lastScope);
+                CalloutHistory.save();
+            }
+        });
     }
 
     private void handleClientTick(Minecraft minecraft) {
         boolean isInWorld = minecraft.level != null && minecraft.player != null;
+
+        if (!isInWorld && minecraft.getConnection() == null) {
+            disconnected = true;
+        }
+
         if (isInWorld) {
             String scope = currentScope(minecraft);
             CalloutHistory.setCurrentScope(scope);
@@ -66,7 +80,7 @@ public class CalloutClient implements ClientModInitializer {
             if (!wasInWorld) {
                 if (!lastScope.isBlank() && !lastScope.equals(scope) && config.clearHistoryOnScopeChange) {
                     CalloutHistory.clear();
-                } else {
+                } else if (disconnected) {
                     CalloutHistory.loadSessionBuffer(scope);
                     CalloutHistory.isRestoringChat = true;
                     for (CalloutHistory.ChatLine line : CalloutHistory.getChatBuffer()) {
@@ -80,8 +94,16 @@ public class CalloutClient implements ClientModInitializer {
                     }
                     CalloutHistory.isRestoringChat = false;
                 }
+                disconnected = false;
             }
             lastScope = scope;
+
+            tickCount++;
+            if (tickCount >= 1200) {
+                tickCount = 0;
+                CalloutHistory.saveSessionBuffer(lastScope);
+                CalloutHistory.save();
+            }
         }
         if (wasInWorld && !isInWorld) {
             CalloutHistory.saveSessionBuffer(lastScope);
@@ -104,11 +126,11 @@ public class CalloutClient implements ClientModInitializer {
     private static String currentScope(Minecraft minecraft) {
         ServerData serverData = minecraft.getCurrentServer();
         if (serverData != null) {
-            if (serverData.name != null && !serverData.name.isBlank()) {
-                return serverData.name;
-            }
             if (serverData.ip != null && !serverData.ip.isBlank()) {
                 return serverData.ip;
+            }
+            if (serverData.name != null && !serverData.name.isBlank()) {
+                return serverData.name;
             }
         }
 

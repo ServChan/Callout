@@ -28,6 +28,7 @@ public class CalloutConfigScreen extends Screen {
     private Button ownButton;
     private Button persistButton;
     private Button clearScopeButton;
+    private Button saveButton;
     private EditBox nicknameWord;
     private EditBox nicknameSound;
     private EditBox nicknameVolume;
@@ -62,7 +63,7 @@ public class CalloutConfigScreen extends Screen {
         this.caseButton = addRenderableWidget(toggleButton(left + 230, y, 220, caseLabel(), button -> {
             config.caseSensitive = !config.caseSensitive;
             button.setMessage(caseLabel());
-            validateAllRegex();
+            validateAllInputs();
         }));
         this.ownButton = addRenderableWidget(toggleButton(left + 460, y, 240, ownLabel(), button -> {
             config.pingOwnMessages = !config.pingOwnMessages;
@@ -73,6 +74,9 @@ public class CalloutConfigScreen extends Screen {
         maxPings = addField(left, y, 90, Integer.toString(config.maxPingHistory), "callout.hint.max_pings");
         contextBefore = addField(left + 100, y, 80, Integer.toString(config.contextBefore), "callout.hint.context_before");
         contextAfter = addField(left + 190, y, 80, Integer.toString(config.contextAfter), "callout.hint.context_after");
+        maxPings.setResponder(text -> validateAllInputs());
+        contextBefore.setResponder(text -> validateAllInputs());
+        contextAfter.setResponder(text -> validateAllInputs());
         persistButton = addRenderableWidget(toggleButton(left + 282, y, 190, persistLabel(), button -> {
             config.persistHistory = !config.persistHistory;
             button.setMessage(persistLabel());
@@ -88,7 +92,9 @@ public class CalloutConfigScreen extends Screen {
         nicknameSound = addField(left + 206, y, 214, config.nickname.sound, "callout.hint.sound");
         nicknameVolume = addField(left + 430, y, 80, Float.toString(config.nickname.volume), "callout.hint.volume");
         nicknamePitch = addField(left + 520, y, 80, Float.toString(config.nickname.pitch), "callout.hint.pitch");
-        nicknameWord.setResponder(text -> validateAllRegex());
+        nicknameWord.setResponder(text -> validateAllInputs());
+        nicknameVolume.setResponder(text -> validateAllInputs());
+        nicknamePitch.setResponder(text -> validateAllInputs());
 
         triggerRows.clear();
         y = 176;
@@ -116,37 +122,42 @@ public class CalloutConfigScreen extends Screen {
                         reopen();
                     }).bounds(left + 610, y, 90, FIELD_HEIGHT).build())
             );
-            row.word.setResponder(text -> validateAllRegex());
+            row.word.setResponder(text -> validateAllInputs());
+            row.volume.setResponder(text -> validateAllInputs());
+            row.pitch.setResponder(text -> validateAllInputs());
             triggerRows.add(row);
             y += FIELD_HEIGHT + GAP;
         }
 
         int listY = 148;
         addRenderableWidget(Button.builder(Component.translatable("callout.button.add_trigger"), button -> {
+            if (!validateAllInputs()) return;
             collectCurrentValues();
             config.triggers.add(new CalloutConfig.Trigger("", "minecraft:block.note_block.pling", 1.0F, 1.0F));
             triggerPage = maxTriggerPage();
             reopen();
         }).bounds(left + 342, listY, 120, FIELD_HEIGHT).build());
         addRenderableWidget(Button.builder(Component.literal("<"), button -> {
+            if (!validateAllInputs()) return;
             collectCurrentValues();
             triggerPage = Math.max(0, triggerPage - 1);
             reopen();
         }).bounds(left + 472, listY, 36, FIELD_HEIGHT).build()).active = triggerPage > 0;
         addRenderableWidget(Button.builder(Component.literal(">"), button -> {
+            if (!validateAllInputs()) return;
             collectCurrentValues();
             triggerPage = Math.min(maxTriggerPage(), triggerPage + 1);
             reopen();
         }).bounds(left + 514, listY, 36, FIELD_HEIGHT).build()).active = triggerPage < maxTriggerPage();
 
         int buttonY = this.height - 30;
-        addRenderableWidget(Button.builder(Component.translatable("callout.button.save"), button -> saveAndClose())
+        saveButton = addRenderableWidget(Button.builder(Component.translatable("callout.button.save"), button -> saveAndClose())
                 .bounds(this.width / 2 - 155, buttonY, 150, 20)
                 .build());
         addRenderableWidget(Button.builder(Component.translatable("callout.button.cancel"), button -> this.minecraft.setScreen(parent))
                 .bounds(this.width / 2 + 5, buttonY, 150, 20)
                 .build());
-        validateAllRegex();
+        validateAllInputs();
     }
 
     @Override
@@ -201,7 +212,7 @@ public class CalloutConfigScreen extends Screen {
         return Button.builder(regexLabel(trigger), button -> {
                     trigger.regex = !trigger.regex;
                     button.setMessage(regexLabel(trigger));
-                    validateAllRegex();
+                    validateAllInputs();
                 })
                 .bounds(x, y, width, FIELD_HEIGHT)
                 .build();
@@ -233,7 +244,7 @@ public class CalloutConfigScreen extends Screen {
 
     private void saveAndClose() {
         collectCurrentValues();
-        if (!validateAllRegex()) {
+        if (!validateAllInputs()) {
             return;
         }
         config.triggers.removeIf(trigger -> trigger.word == null || trigger.word.isBlank());
@@ -295,6 +306,57 @@ public class CalloutConfigScreen extends Screen {
             }
         }
         return valid;
+    }
+
+    private boolean validateAllInputs() {
+        boolean valid = validateAllRegex();
+        valid &= validateIntField(maxPings, 1, 1000, "callout.error.max_pings");
+        valid &= validateIntField(contextBefore, 0, 20, "callout.error.context");
+        valid &= validateIntField(contextAfter, 0, 20, "callout.error.context");
+        valid &= validateFloatField(nicknameVolume, 0.0F, 4.0F, "callout.error.volume");
+        valid &= validateFloatField(nicknamePitch, 0.5F, 2.0F, "callout.error.pitch");
+        for (TriggerRow row : triggerRows) {
+            valid &= validateFloatField(row.volume, 0.0F, 4.0F, "callout.error.volume");
+            valid &= validateFloatField(row.pitch, 0.5F, 2.0F, "callout.error.pitch");
+        }
+        if (saveButton != null) {
+            saveButton.active = valid;
+        }
+        return valid;
+    }
+
+    private boolean validateIntField(EditBox field, int min, int max, String errorKey) {
+        if (field == null) return true;
+        try {
+            int value = Integer.parseInt(field.getValue().trim());
+            if (value >= min && value <= max) {
+                field.setTextColor(0xFFE0E0E0);
+                return true;
+            }
+        } catch (NumberFormatException ignored) {
+        }
+        field.setTextColor(0xFFFF5555);
+        if (validationError.isBlank()) {
+            validationError = Component.translatable(errorKey).getString();
+        }
+        return false;
+    }
+
+    private boolean validateFloatField(EditBox field, float min, float max, String errorKey) {
+        if (field == null) return true;
+        try {
+            float value = Float.parseFloat(field.getValue().trim());
+            if (Float.isFinite(value) && value >= min && value <= max) {
+                field.setTextColor(0xFFE0E0E0);
+                return true;
+            }
+        } catch (NumberFormatException ignored) {
+        }
+        field.setTextColor(0xFFFF5555);
+        if (validationError.isBlank()) {
+            validationError = Component.translatable(errorKey).getString();
+        }
+        return false;
     }
 
     private boolean validateRegex(CalloutConfig.Trigger trigger, EditBox field) {

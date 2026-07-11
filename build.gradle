@@ -5,6 +5,8 @@ plugins {
 
 version = project.mod_version
 group = project.maven_group
+def modVersion = project.version.toString()
+def licenseArchiveName = project.name
 
 base {
     archivesName = project.archives_base_name
@@ -39,10 +41,10 @@ dependencies {
 }
 
 tasks.withType(ProcessResources).configureEach {
-    inputs.property "version", project.version
+    inputs.property "version", modVersion
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version
+        expand "version": modVersion
     }
 }
 
@@ -59,7 +61,7 @@ java {
 
 jar {
     from("LICENSE") {
-        rename { "${it}_${project.name}" }
+        rename { "${it}_${licenseArchiveName}" }
     }
 }
 

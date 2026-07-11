@@ -42,6 +42,10 @@
   "callout.button.remove": "Remove",
   "callout.triggers.page": "Page %s/%s",
   "callout.error.invalid_regex": "Invalid regex: %s",
+  "callout.error.max_pings": "History size must be between 1 and 1000",
+  "callout.error.context": "Context size must be between 0 and 20",
+  "callout.error.volume": "Volume must be between 0 and 4",
+  "callout.error.pitch": "Pitch must be between 0.5 and 2",
 
   "callout.message.self_test_hint": "Callout detected your nickname and played the test sound. Own messages are ignored by default; enable \"Own messages\" in Mod Menu if you want them to trigger alerts.",
   "callout.message.self_test_detected": "Nickname detected; test sound played.",
@@ -55,6 +59,7 @@
   "callout.history.previous": "Previous",
   "callout.history.next": "Next",
   "callout.history.clear": "Clear",
+  "callout.history.clear_confirm": "Confirm?",
   "callout.history.empty": "No pings recorded yet.",
   "callout.history.count": "%s / %s pings · page %s/%s",
   "callout.history.entry_header": "#%s · %s · %s · %s · %s",

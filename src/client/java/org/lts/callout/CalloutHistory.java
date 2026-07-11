@@ -297,7 +297,16 @@ public final class CalloutHistory {
             java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<List<ChatLine>>(){}.getType();
             List<ChatLine> loaded = GSON.fromJson(reader, type);
             if (loaded != null) {
-                chatBuffer.addAll(loaded);
+                for (ChatLine line : loaded) {
+                    if (line != null) {
+                        chatBuffer.addLast(line);
+                        nextSequence = Math.max(nextSequence, line.sequence() + 1L);
+                    }
+                }
+                int maxSize = maxChatBuffer(CalloutConfig.loadIfChanged());
+                while (chatBuffer.size() > maxSize) {
+                    chatBuffer.removeFirst();
+                }
             }
         } catch (Exception e) {
             CalloutClient.LOGGER.warn("Failed to load session buffer from {}", path, e);

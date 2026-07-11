@@ -44,6 +44,7 @@ public class CalloutConfig {
         } catch (IOException | RuntimeException exception) {
             CalloutClient.LOGGER.warn("Failed to load {}, using defaults", CONFIG_PATH, exception);
             instance = defaults();
+            lastModified = currentModifiedTime();
         }
 
         return instance;
@@ -127,6 +128,14 @@ public class CalloutConfig {
         return config;
     }
 
+    private static long currentModifiedTime() {
+        try {
+            return Files.exists(CONFIG_PATH) ? Files.getLastModifiedTime(CONFIG_PATH).toMillis() : -1L;
+        } catch (IOException ignored) {
+            return -1L;
+        }
+    }
+
     private CalloutConfig copy() {
         CalloutConfig copy = new CalloutConfig();
         copy.enabled = enabled;
@@ -160,7 +169,14 @@ public class CalloutConfig {
         if (config.triggers == null) {
             config.triggers = new ArrayList<>();
         }
-        config.triggers.forEach(Trigger::sanitize);
+        List<Trigger> sanitizedTriggers = new ArrayList<>();
+        for (Trigger trigger : config.triggers) {
+            if (trigger != null) {
+                trigger.sanitize();
+                sanitizedTriggers.add(trigger);
+            }
+        }
+        config.triggers = sanitizedTriggers;
 
         return config;
     }
