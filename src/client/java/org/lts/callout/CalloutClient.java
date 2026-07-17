@@ -70,6 +70,7 @@ public class CalloutClient implements ClientModInitializer {
 
         if (!isInWorld && minecraft.getConnection() == null) {
             disconnected = true;
+            WorldScopeTracker.clear();
         }
 
         if (isInWorld) {
@@ -124,13 +125,15 @@ public class CalloutClient implements ClientModInitializer {
     }
 
     private static String currentScope(Minecraft minecraft) {
+        String dimension = minecraft.level == null ? "unknown"
+                : minecraft.level.dimension().identifier().toString();
         ServerData serverData = minecraft.getCurrentServer();
         if (serverData != null) {
             if (serverData.ip != null && !serverData.ip.isBlank()) {
-                return serverData.ip;
+                return serverData.ip + "|" + dimension + WorldScopeTracker.seedSuffix();
             }
             if (serverData.name != null && !serverData.name.isBlank()) {
-                return serverData.name;
+                return serverData.name + "|" + dimension + WorldScopeTracker.seedSuffix();
             }
         }
 
@@ -138,12 +141,12 @@ public class CalloutClient implements ClientModInitializer {
         if (server != null && server.getWorldData() != null) {
             String levelName = server.getWorldData().getLevelName();
             if (levelName != null && !levelName.isBlank()) {
-                return levelName;
+                return levelName + "|" + dimension + WorldScopeTracker.seedSuffix();
             }
         }
 
         if (minecraft.level != null) {
-            return minecraft.level.dimension().identifier().toString();
+            return dimension + WorldScopeTracker.seedSuffix();
         }
         return "";
     }

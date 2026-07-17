@@ -249,8 +249,11 @@ public class CalloutConfigScreen extends Screen {
         }
         config.triggers.removeIf(trigger -> trigger.word == null || trigger.word.isBlank());
 
-        CalloutConfig.save(config);
-        this.minecraft.setScreen(parent);
+        if (CalloutConfig.save(config)) {
+            this.minecraft.setScreen(parent);
+        } else {
+            validationError = Component.translatable("callout.error.save_failed").getString();
+        }
     }
 
     private void collectCurrentValues() {

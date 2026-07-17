@@ -46,6 +46,7 @@
   "callout.error.context": "Context size must be between 0 and 20",
   "callout.error.volume": "Volume must be between 0 and 4",
   "callout.error.pitch": "Pitch must be between 0.5 and 2",
+  "callout.error.save_failed": "Could not save the configuration; check the log and try again",
 
   "callout.message.self_test_hint": "Callout detected your nickname and played the test sound. Own messages are ignored by default; enable \"Own messages\" in Mod Menu if you want them to trigger alerts.",
   "callout.message.self_test_detected": "Nickname detected; test sound played.",

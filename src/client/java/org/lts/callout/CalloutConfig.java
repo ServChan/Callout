@@ -9,6 +9,8 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,18 +75,26 @@ public class CalloutConfig {
         return instance.copy();
     }
 
-    public static void save(CalloutConfig config) {
+    public static boolean save(CalloutConfig config) {
         CalloutConfig sanitized = sanitize(config);
-
+        Path temporary = CONFIG_PATH.resolveSibling(CONFIG_PATH.getFileName() + ".tmp");
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
-            try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
+            try (Writer writer = Files.newBufferedWriter(temporary)) {
                 GSON.toJson(sanitized, writer);
             }
+            replace(temporary, CONFIG_PATH);
             instance = sanitized;
             lastModified = Files.getLastModifiedTime(CONFIG_PATH).toMillis();
+            return true;
         } catch (IOException exception) {
             CalloutClient.LOGGER.warn("Failed to save {}", CONFIG_PATH, exception);
+            try {
+                Files.deleteIfExists(temporary);
+            } catch (IOException cleanupException) {
+                CalloutClient.LOGGER.debug("Failed to clean temporary config {}", temporary, cleanupException);
+            }
+            return false;
         }
     }
 
@@ -113,11 +123,21 @@ public class CalloutConfig {
 
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
-            try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
+            Path temporary = CONFIG_PATH.resolveSibling(CONFIG_PATH.getFileName() + ".tmp");
+            try (Writer writer = Files.newBufferedWriter(temporary)) {
                 GSON.toJson(defaults(), writer);
             }
+            replace(temporary, CONFIG_PATH);
         } catch (IOException exception) {
             CalloutClient.LOGGER.warn("Failed to create {}", CONFIG_PATH, exception);
+        }
+    }
+
+    private static void replace(Path temporary, Path target) throws IOException {
+        try {
+            Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException ignored) {
+            Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

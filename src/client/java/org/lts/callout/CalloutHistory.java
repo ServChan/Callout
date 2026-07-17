@@ -12,8 +12,13 @@ import java.io.Writer;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -94,10 +99,7 @@ public final class CalloutHistory {
             return;
         }
         try {
-            Files.createDirectories(HISTORY_PATH.getParent());
-            try (Writer writer = Files.newBufferedWriter(HISTORY_PATH)) {
-                GSON.toJson(new ArrayList<>(pings), writer);
-            }
+            writeAtomically(HISTORY_PATH, new ArrayList<>(pings));
         } catch (Exception exception) {
             CalloutClient.LOGGER.warn("Failed to save history to {}", HISTORY_PATH, exception);
         }
@@ -276,21 +278,53 @@ public final class CalloutHistory {
 
     public static synchronized void saveSessionBuffer(String scope) {
         if (scope == null || scope.isBlank()) return;
-        Path path = FabricLoader.getInstance().getConfigDir().resolve("callout_sessions").resolve(scope.replaceAll("[^a-zA-Z0-9.-]", "_") + ".json");
+        Path path = sessionPath(scope);
         try {
-            Files.createDirectories(path.getParent());
-            try (java.io.Writer writer = Files.newBufferedWriter(path)) {
-                GSON.toJson(new ArrayList<>(chatBuffer), writer);
-            }
+            writeAtomically(path, new ArrayList<>(chatBuffer));
         } catch (Exception e) {
             CalloutClient.LOGGER.warn("Failed to save session buffer to {}", path, e);
         }
     }
 
+    private static void writeAtomically(Path path, Object value) throws IOException {
+        Files.createDirectories(path.getParent());
+        Path temporary = path.resolveSibling(path.getFileName() + ".tmp");
+        try {
+            try (Writer writer = Files.newBufferedWriter(temporary)) {
+                GSON.toJson(value, writer);
+            }
+            try {
+                Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException ignored) {
+                Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException exception) {
+            Files.deleteIfExists(temporary);
+            throw exception;
+        }
+    }
+
+    private static Path sessionPath(String scope) {
+        String readable = scope.replaceAll("[^a-zA-Z0-9.-]", "_");
+        if (readable.length() > 80) {
+            readable = readable.substring(0, 80);
+        }
+        String hash;
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(scope.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            hash = HexFormat.of().formatHex(digest, 0, 6);
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException(impossible);
+        }
+        return FabricLoader.getInstance().getConfigDir().resolve("callout_sessions")
+                .resolve(readable + "_" + hash + ".json");
+    }
+
     public static synchronized void loadSessionBuffer(String scope) {
         chatBuffer.clear();
         if (scope == null || scope.isBlank()) return;
-        Path path = FabricLoader.getInstance().getConfigDir().resolve("callout_sessions").resolve(scope.replaceAll("[^a-zA-Z0-9.-]", "_") + ".json");
+        Path path = sessionPath(scope);
         if (!Files.exists(path)) return;
         
         try (java.io.Reader reader = Files.newBufferedReader(path)) {
