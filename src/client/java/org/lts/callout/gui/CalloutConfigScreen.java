@@ -154,7 +154,7 @@ public class CalloutConfigScreen extends Screen {
         saveButton = addRenderableWidget(Button.builder(Component.translatable("callout.button.save"), button -> saveAndClose())
                 .bounds(this.width / 2 - 155, buttonY, 150, 20)
                 .build());
-        addRenderableWidget(Button.builder(Component.translatable("callout.button.cancel"), button -> this.minecraft.setScreen(parent))
+        addRenderableWidget(Button.builder(Component.translatable("callout.button.cancel"), button -> this.minecraft.setScreenAndShow(parent))
                 .bounds(this.width / 2 + 5, buttonY, 150, 20)
                 .build());
         validateAllInputs();
@@ -192,7 +192,7 @@ public class CalloutConfigScreen extends Screen {
 
     @Override
     public void onClose() {
-        this.minecraft.setScreen(parent);
+        this.minecraft.setScreenAndShow(parent);
     }
 
     private EditBox addField(int x, int y, int width, String value, String hintKey) {
@@ -250,7 +250,7 @@ public class CalloutConfigScreen extends Screen {
         config.triggers.removeIf(trigger -> trigger.word == null || trigger.word.isBlank());
 
         if (CalloutConfig.save(config)) {
-            this.minecraft.setScreen(parent);
+            this.minecraft.setScreenAndShow(parent);
         } else {
             validationError = Component.translatable("callout.error.save_failed").getString();
         }
@@ -279,7 +279,7 @@ public class CalloutConfigScreen extends Screen {
 
     private void reopen() {
         if (this.minecraft != null) {
-            this.minecraft.setScreen(new CalloutConfigScreen(parent, config, triggerPage));
+            this.minecraft.setScreenAndShow(new CalloutConfigScreen(parent, config, triggerPage));
         }
     }
 

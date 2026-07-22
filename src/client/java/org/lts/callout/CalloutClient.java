@@ -113,8 +113,8 @@ public class CalloutClient implements ClientModInitializer {
         wasInWorld = isInWorld;
 
         while (historyKey.consumeClick()) {
-            if (isInWorld && isControlDown(minecraft) && !(minecraft.screen instanceof CalloutHistoryScreen)) {
-                minecraft.setScreen(new CalloutHistoryScreen(minecraft.screen));
+            if (isInWorld && isControlDown(minecraft) && !(MinecraftScreenAccess.getScreen(minecraft) instanceof CalloutHistoryScreen)) {
+                minecraft.setScreenAndShow(new CalloutHistoryScreen(MinecraftScreenAccess.getScreen(minecraft)));
             }
         }
     }

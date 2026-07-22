@@ -41,7 +41,7 @@ Callout добавляет к обычному чату Minecraft:
 
 ### Установка
 Для работы нужны:
-- [Fabric Loader](https://fabricmc.net/use/installer/) (>= 0.19.0)
+- [Fabric Loader](https://fabricmc.net/use/installer/) (>= 0.19.3)
 - [Fabric API](https://modrinth.com/mod/fabric-api)
 
 Рекомендуется:
@@ -52,10 +52,10 @@ Callout добавляет к обычному чату Minecraft:
 - история автоматически сохраняется в `config/callout_history.json`.
 
 ### Совместимость
-- Minecraft `26.1.2`
+- Minecraft `26.1.2`-`26.2` (one JAR)
 - Java `25`
 - Fabric Loader `0.19.3+`
-- Текущая версия мода в проекте: `1.0.1`
+- Текущая версия мода в проекте: `1.0.2`
 
 Требования для сборки:
 - JDK 25
@@ -116,7 +116,7 @@ Available settings in the config screen (via Mod Menu):
 
 ### Installation
 Required:
-- [Fabric Loader](https://fabricmc.net/use/installer/) (>= 0.19.0)
+- [Fabric Loader](https://fabricmc.net/use/installer/) (>= 0.19.3)
 - [Fabric API](https://modrinth.com/mod/fabric-api)
 
 Recommended:
@@ -127,10 +127,10 @@ Important:
 - ping history is automatically saved to `config/callout_history.json`.
 
 ### Compatibility
-- Minecraft `26.1.2`
+- Minecraft `26.1.2`-`26.2` (one JAR)
 - Java `25`
-- Fabric Loader `0.19.0+`
-- Current project mod version: `1.0.1`
+- Fabric Loader `0.19.3+`
+- Current project mod version: `1.0.2`
 
 ### Build
 Requirements:
@@ -153,4 +153,4 @@ Output:
 
 Configuration, ping history, and per-session chat buffers are written through sibling temporary files and replaced atomically where the filesystem supports it. Multiplayer scopes include server address, dimension, and stable spawn-info seed, preventing history from different plugin worlds with the same dimension from being merged. A failed settings write keeps the screen open and reports the error instead of showing a false success state.
 
-The project was re-audited and compiled with `clean build --warning-mode all` on 2026-07-17. This verifies compilation and resource processing; chat delivery, sound playback, and world-switch behavior still require an in-game test.
+The same sources were compiled against Minecraft 26.1.2 and 26.2 on 2026-07-22. This verifies compilation and resource processing; chat delivery, sound playback, and world-switch behavior still require an in-game test.

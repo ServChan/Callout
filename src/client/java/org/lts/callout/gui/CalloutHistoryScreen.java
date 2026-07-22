@@ -95,7 +95,7 @@ public class CalloutHistoryScreen extends Screen {
             }
         }).bounds(this.width / 2 + 7, y, 96, 20).build());
 
-        addRenderableWidget(Button.builder(Component.translatable("callout.button.close"), button -> this.minecraft.setScreen(parent))
+        addRenderableWidget(Button.builder(Component.translatable("callout.button.close"), button -> this.minecraft.setScreenAndShow(parent))
                 .bounds(this.width / 2 + 109, y, 96, 20).build());
 
         updateButtons();
@@ -209,7 +209,7 @@ public class CalloutHistoryScreen extends Screen {
 
                 if (mouseX >= curX && mouseX <= curX + senderWidth && mouseY >= headerY && mouseY <= headerY + 10) {
                     if (entry.sender != null && !entry.sender.isBlank() && !entry.sender.equals(Component.translatable("callout.history.sender.system").getString())) {
-                        this.minecraft.setScreen(new ChatScreen("/msg " + entry.sender + " ", false));
+                        this.minecraft.setScreenAndShow(new ChatScreen("/msg " + entry.sender + " ", false));
                         return true;
                     }
                 }
@@ -291,7 +291,7 @@ public class CalloutHistoryScreen extends Screen {
 
     @Override
     public void onClose() {
-        this.minecraft.setScreen(parent);
+        this.minecraft.setScreenAndShow(parent);
     }
 
     @Override

@@ -7,6 +7,11 @@ version = project.mod_version
 group = project.maven_group
 def modVersion = project.version.toString()
 def licenseArchiveName = project.name
+def minecraftVersionKey = project.minecraft_version.toString().replace('.', '_')
+def fabricMessageApiVersion = project.property("fabric_message_api_version_${minecraftVersionKey}")
+def fabricKeyMappingApiVersion = project.property("fabric_key_mapping_api_version_${minecraftVersionKey}")
+def fabricLifecycleEventsVersion = project.property("fabric_lifecycle_events_version_${minecraftVersionKey}")
+def localModMenu = file(project.modmenu_jar)
 
 base {
     archivesName = project.archives_base_name
@@ -32,11 +37,15 @@ loom {
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    implementation "net.fabricmc.fabric-api:fabric-message-api-v1:${project.fabric_message_api_version}"
-    implementation "net.fabricmc.fabric-api:fabric-key-mapping-api-v1:${project.fabric_key_mapping_api_version}"
-    implementation "net.fabricmc.fabric-api:fabric-lifecycle-events-v1:${project.fabric_lifecycle_events_version}"
-    compileOnly("com.terraformersmc:modmenu:${project.modmenu_version}") {
-        transitive = false
+    implementation "net.fabricmc.fabric-api:fabric-message-api-v1:${fabricMessageApiVersion}"
+    implementation "net.fabricmc.fabric-api:fabric-key-mapping-api-v1:${fabricKeyMappingApiVersion}"
+    implementation "net.fabricmc.fabric-api:fabric-lifecycle-events-v1:${fabricLifecycleEventsVersion}"
+    if (localModMenu.isFile()) {
+        compileOnly files(localModMenu)
+    } else {
+        compileOnly("com.terraformersmc:modmenu:${project.modmenu_version}") {
+            transitive = false
+        }
     }
 }
 
