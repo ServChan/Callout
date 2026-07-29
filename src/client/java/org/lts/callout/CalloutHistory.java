@@ -325,7 +325,10 @@ public final class CalloutHistory {
         chatBuffer.clear();
         if (scope == null || scope.isBlank()) return;
         Path path = sessionPath(scope);
-        if (!Files.exists(path)) return;
+        if (!Files.exists(path)) {
+            path = findLegacySessionFile(scope);
+            if (path == null || !Files.exists(path)) return;
+        }
         
         try (java.io.Reader reader = Files.newBufferedReader(path)) {
             java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<List<ChatLine>>(){}.getType();
@@ -344,6 +347,28 @@ public final class CalloutHistory {
             }
         } catch (Exception e) {
             CalloutClient.LOGGER.warn("Failed to load session buffer from {}", path, e);
+        }
+    }
+
+    private static Path findLegacySessionFile(String scope) {
+        Path sessionsDir = FabricLoader.getInstance().getConfigDir().resolve("callout_sessions");
+        if (!Files.exists(sessionsDir)) return null;
+        String prefix = scope.replaceAll("[^a-zA-Z0-9.-]", "_");
+        if (prefix.length() > 60) {
+            prefix = prefix.substring(0, 60);
+        }
+        final String searchPrefix = prefix;
+        try (var stream = Files.list(sessionsDir)) {
+            return stream.filter(p -> p.getFileName().toString().startsWith(searchPrefix))
+                    .max((p1, p2) -> {
+                        try {
+                            return Files.getLastModifiedTime(p1).compareTo(Files.getLastModifiedTime(p2));
+                        } catch (IOException e) {
+                            return 0;
+                        }
+                    }).orElse(null);
+        } catch (IOException e) {
+            return null;
         }
     }
 
