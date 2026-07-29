@@ -19,6 +19,24 @@ public final class MinecraftScreenAccess {
         return ACCESS.getScreen(minecraft);
     }
 
+    /**
+     * Closes the active screen across the API move from Minecraft to Minecraft.gui in 26.2.
+     * Passing {@code null} also avoids restoring a stale Mod Menu/inventory parent screen.
+     */
+    public static void closeScreen(Minecraft minecraft) {
+        try {
+            try {
+                minecraft.gui.getClass().getMethod("setScreen", Screen.class)
+                        .invoke(minecraft.gui, new Object[]{null});
+            } catch (NoSuchMethodException ignored) {
+                minecraft.getClass().getMethod("setScreen", Screen.class)
+                        .invoke(minecraft, new Object[]{null});
+            }
+        } catch (ReflectiveOperationException exception) {
+            throw accessFailed(exception, "Could not close the active Minecraft screen");
+        }
+    }
+
     private static Access createAccess() {
         try {
             return new LegacyAccess(Minecraft.class.getField("screen"));
@@ -33,10 +51,14 @@ public final class MinecraftScreenAccess {
     }
 
     private static RuntimeException accessFailed(ReflectiveOperationException exception) {
+        return accessFailed(exception, "Could not read the active Minecraft screen");
+    }
+
+    private static RuntimeException accessFailed(ReflectiveOperationException exception, String message) {
         Throwable cause = exception instanceof InvocationTargetException && exception.getCause() != null
                 ? exception.getCause()
                 : exception;
-        return new IllegalStateException("Could not read the active Minecraft screen", cause);
+        return new IllegalStateException(message, cause);
     }
 
     private interface Access {

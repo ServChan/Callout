@@ -77,7 +77,7 @@ public class CalloutClient implements ClientModInitializer {
             String scope = currentScope(minecraft);
             CalloutHistory.setCurrentScope(scope);
             CalloutConfig config = CalloutConfig.loadIfChanged();
-            
+
             if (!wasInWorld) {
                 if (!lastScope.isBlank() && !lastScope.equals(scope) && config.clearHistoryOnScopeChange) {
                     CalloutHistory.clear();
@@ -96,6 +96,16 @@ public class CalloutClient implements ClientModInitializer {
                     CalloutHistory.isRestoringChat = false;
                 }
                 disconnected = false;
+            } else if (!lastScope.isBlank() && !lastScope.equals(scope)) {
+                CalloutHistory.saveSessionBuffer(lastScope);
+                CalloutHistory.save();
+
+                if (config.clearHistoryOnScopeChange) {
+                    CalloutHistory.clear();
+                } else {
+                    CalloutHistory.resetSessionBuffer();
+                    CalloutHistory.loadSessionBuffer(scope);
+                }
             }
             lastScope = scope;
 
@@ -113,8 +123,8 @@ public class CalloutClient implements ClientModInitializer {
         wasInWorld = isInWorld;
 
         while (historyKey.consumeClick()) {
-            if (isInWorld && isControlDown(minecraft) && !(MinecraftScreenAccess.getScreen(minecraft) instanceof CalloutHistoryScreen)) {
-                minecraft.setScreenAndShow(new CalloutHistoryScreen(MinecraftScreenAccess.getScreen(minecraft)));
+            if (isInWorld && isControlDown(minecraft) && MinecraftScreenAccess.getScreen(minecraft) == null) {
+                minecraft.setScreenAndShow(new CalloutHistoryScreen());
             }
         }
     }

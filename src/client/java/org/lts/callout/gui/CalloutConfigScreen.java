@@ -1,11 +1,15 @@
 package org.lts.callout.gui;
 
 import org.lts.callout.CalloutConfig;
+import org.lts.callout.MinecraftScreenAccess;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +33,7 @@ public class CalloutConfigScreen extends Screen {
     private Button persistButton;
     private Button clearScopeButton;
     private Button saveButton;
+    private Button cancelButton;
     private EditBox nicknameWord;
     private EditBox nicknameSound;
     private EditBox nicknameVolume;
@@ -154,7 +159,7 @@ public class CalloutConfigScreen extends Screen {
         saveButton = addRenderableWidget(Button.builder(Component.translatable("callout.button.save"), button -> saveAndClose())
                 .bounds(this.width / 2 - 155, buttonY, 150, 20)
                 .build());
-        addRenderableWidget(Button.builder(Component.translatable("callout.button.cancel"), button -> this.minecraft.setScreenAndShow(parent))
+        cancelButton = addRenderableWidget(Button.builder(Component.translatable("callout.button.cancel"), button -> closeScreen())
                 .bounds(this.width / 2 + 5, buttonY, 150, 20)
                 .build());
         validateAllInputs();
@@ -192,7 +197,29 @@ public class CalloutConfigScreen extends Screen {
 
     @Override
     public void onClose() {
-        this.minecraft.setScreenAndShow(parent);
+        closeScreen();
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        // Keep footer actions reliable when an EditBox or another input mod has focus.
+        if (saveButton != null && saveButton.mouseClicked(event, doubleClick)) {
+            return true;
+        }
+        if (cancelButton != null && cancelButton.mouseClicked(event, doubleClick)) {
+            return true;
+        }
+        return super.mouseClicked(event, doubleClick);
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        // Escape cancels without collecting or saving the edited values.
+        if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+            closeScreen();
+            return true;
+        }
+        return super.keyPressed(event);
     }
 
     private EditBox addField(int x, int y, int width, String value, String hintKey) {
@@ -250,7 +277,7 @@ public class CalloutConfigScreen extends Screen {
         config.triggers.removeIf(trigger -> trigger.word == null || trigger.word.isBlank());
 
         if (CalloutConfig.save(config)) {
-            this.minecraft.setScreenAndShow(parent);
+            closeScreen();
         } else {
             validationError = Component.translatable("callout.error.save_failed").getString();
         }
@@ -280,6 +307,12 @@ public class CalloutConfigScreen extends Screen {
     private void reopen() {
         if (this.minecraft != null) {
             this.minecraft.setScreenAndShow(new CalloutConfigScreen(parent, config, triggerPage));
+        }
+    }
+
+    private void closeScreen() {
+        if (this.minecraft != null) {
+            MinecraftScreenAccess.closeScreen(this.minecraft);
         }
     }
 

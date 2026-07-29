@@ -2,13 +2,16 @@ package org.lts.callout.gui;
 
 import org.lts.callout.CalloutHistory;
 import org.lts.callout.CalloutConfig;
+import org.lts.callout.MinecraftScreenAccess;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,7 +22,6 @@ public class CalloutHistoryScreen extends Screen {
     private static final int CARD_HEIGHT = 165;
     private static final int CARD_GAP = 10;
 
-    private final Screen parent;
     private int page;
     private Button previousButton;
     private Button nextButton;
@@ -27,6 +29,7 @@ public class CalloutHistoryScreen extends Screen {
     private Button sortButton;
     private Button scopeButton;
     private Button clearButton;
+    private Button closeButton;
     private long clearConfirmationUntil;
     private boolean newestFirst = true;
     private int scopeIndex;
@@ -37,9 +40,8 @@ public class CalloutHistoryScreen extends Screen {
     private int toastY;
     private long toastExpiration;
 
-    public CalloutHistoryScreen(Screen parent) {
+    public CalloutHistoryScreen() {
         super(Component.translatable("callout.history.title"));
-        this.parent = parent;
     }
 
     @Override
@@ -95,7 +97,7 @@ public class CalloutHistoryScreen extends Screen {
             }
         }).bounds(this.width / 2 + 7, y, 96, 20).build());
 
-        addRenderableWidget(Button.builder(Component.translatable("callout.button.close"), button -> this.minecraft.setScreenAndShow(parent))
+        closeButton = addRenderableWidget(Button.builder(Component.translatable("callout.button.close"), button -> closeScreen())
                 .bounds(this.width / 2 + 109, y, 96, 20).build());
 
         updateButtons();
@@ -184,6 +186,11 @@ public class CalloutHistoryScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        // Exit must remain clickable even if another widget or an input mod consumes the event.
+        if (closeButton != null && closeButton.mouseClicked(event, doubleClick)) {
+            return true;
+        }
+
         double mouseX = event.x();
         double mouseY = event.y();
         int button = event.button();
@@ -291,7 +298,23 @@ public class CalloutHistoryScreen extends Screen {
 
     @Override
     public void onClose() {
-        this.minecraft.setScreenAndShow(parent);
+        closeScreen();
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        // Handle Escape before the focused search field can consume it.
+        if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+            closeScreen();
+            return true;
+        }
+        return super.keyPressed(event);
+    }
+
+    private void closeScreen() {
+        if (this.minecraft != null) {
+            MinecraftScreenAccess.closeScreen(this.minecraft);
+        }
     }
 
     @Override
