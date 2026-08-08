@@ -19,6 +19,7 @@ public class CalloutConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("callout.json");
+    private static final Path BACKUP_PATH = CONFIG_PATH.resolveSibling(CONFIG_PATH.getFileName() + ".bak");
 
     private static CalloutConfig instance = defaults();
     private static long lastModified = -1L;
@@ -39,17 +40,30 @@ public class CalloutConfig {
     public static CalloutConfig load() {
         ensureConfigExists();
 
-        try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
-            CalloutConfig loaded = GSON.fromJson(reader, CalloutConfig.class);
-            instance = sanitize(loaded == null ? defaults() : loaded);
-            lastModified = Files.getLastModifiedTime(CONFIG_PATH).toMillis();
-        } catch (IOException | RuntimeException exception) {
-            CalloutClient.LOGGER.warn("Failed to load {}, using defaults", CONFIG_PATH, exception);
-            instance = defaults();
-            lastModified = currentModifiedTime();
+        CalloutConfig loaded = loadFrom(CONFIG_PATH);
+        if (loaded == null) {
+            loaded = loadFrom(BACKUP_PATH);
         }
+        instance = sanitize(loaded == null ? defaults() : loaded);
+        lastModified = currentModifiedTime();
 
         return instance;
+    }
+
+    public static CalloutConfig current() {
+        return instance;
+    }
+
+    private static CalloutConfig loadFrom(Path path) {
+        if (!Files.isRegularFile(path)) {
+            return null;
+        }
+        try (Reader reader = Files.newBufferedReader(path)) {
+            return GSON.fromJson(reader, CalloutConfig.class);
+        } catch (IOException | RuntimeException exception) {
+            CalloutClient.LOGGER.warn("Failed to load {}", path, exception);
+            return null;
+        }
     }
 
     public static CalloutConfig loadIfChanged() {
@@ -82,6 +96,9 @@ public class CalloutConfig {
             Files.createDirectories(CONFIG_PATH.getParent());
             try (Writer writer = Files.newBufferedWriter(temporary)) {
                 GSON.toJson(sanitized, writer);
+            }
+            if (Files.isRegularFile(CONFIG_PATH)) {
+                Files.copy(CONFIG_PATH, BACKUP_PATH, StandardCopyOption.REPLACE_EXISTING);
             }
             replace(temporary, CONFIG_PATH);
             instance = sanitized;
@@ -151,7 +168,8 @@ public class CalloutConfig {
     private static long currentModifiedTime() {
         try {
             return Files.exists(CONFIG_PATH) ? Files.getLastModifiedTime(CONFIG_PATH).toMillis() : -1L;
-        } catch (IOException ignored) {
+        } catch (IOException exception) {
+            CalloutClient.LOGGER.debug("Failed to read modification time for {}", CONFIG_PATH, exception);
             return -1L;
         }
     }

@@ -260,7 +260,8 @@ public class CalloutHistoryScreen extends Screen {
         int contentWidth = Math.max(200, this.width - 32);
         int top = 46;
 
-        Component countComponent = Component.translatable("callout.history.count", total, CalloutConfig.loadIfChanged().maxPingHistory, Math.min(page + 1, maxPage() + 1), maxPage() + 1);
+        Component countComponent = Component.translatable("callout.history.count", total,
+                CalloutConfig.current().maxPingHistory, Math.min(page + 1, maxPage() + 1), maxPage() + 1);
         int countWidth = this.font.width(countComponent) + 12;
         graphics.fill(left, 32, left + countWidth, 44, 0xFF1D2430);
         graphics.text(this.font, countComponent, left + 6, 34, 0xFF8BE9FD);

@@ -1,4 +1,14 @@
+# Callout
+
+[![Minecraft Version](https://img.shields.io/badge/Minecraft-26.1.2%20%7C%2026.2-brightgreen?style=flat-square&logo=minecraft)](README.md)
+[![Platform](https://img.shields.io/badge/Platform-Fabric-blue?style=flat-square&logo=fabric)](README.md)
+[![Java Target](https://img.shields.io/badge/Java-25-orange?style=flat-square&logo=openjdk)](README.md)
+[![Mod Version](https://img.shields.io/badge/Version-1.0.3-purple?style=flat-square)](README.md)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
+
 Client-side Fabric mod for Minecraft that watches chat for important mentions, plays configurable audio alerts, and keeps a persistent history of mentions with nearby context.
+
+## Русский
 
 ### Что это
 Callout это клиентский Fabric-мод для Minecraft, который помогает не пропускать важные сообщения, упоминания ника и заданные ключевые слова в чате во время игры или AFK.
@@ -75,6 +85,8 @@ gradlew.bat clean build
 
 ---
 
+## English
+
 ### What It Is
 Callout is a client-side Fabric mod for Minecraft that helps you never miss important messages, nickname mentions, or custom keywords in chat while playing or AFK.
 
@@ -130,20 +142,17 @@ Important:
 - Minecraft `26.1.2`-`26.2` (one JAR)
 - Java `25`
 - Fabric Loader `0.19.3+`
-- Current project mod version: `1.0.2`
+- Current project mod version: `1.0.3`
 
 ### Build
 Requirements:
 - JDK 25
 
-Build command:
-```bash
-./gradlew clean build
-```
-
-Windows:
-```bat
-gradlew.bat clean build
+Build and dual-target verification on Windows:
+```powershell
+.\gradlew.bat clean build --warning-mode all
+.\gradlew.bat clean build '-Pminecraft_version=26.2' --warning-mode all
+.\gradlew.bat clean build --warning-mode all
 ```
 
 Output:
@@ -151,6 +160,10 @@ Output:
 
 ### Persistence and verification
 
-Configuration, ping history, and per-session chat buffers are written through sibling temporary files and replaced atomically where the filesystem supports it. Multiplayer scopes include server address, dimension, and stable spawn-info seed, preventing history from different plugin worlds with the same dimension from being merged. A failed settings write keeps the screen open and reports the error instead of showing a false success state.
+Configuration, ping history, and per-session chat buffers are written through sibling temporary files and replaced atomically where the filesystem supports it. Existing files are copied to sibling `.bak` backups before replacement, and configuration/history loading can recover from them. Multiplayer scopes include server address, dimension, and stable spawn-info seed, preventing history from different plugin worlds with the same dimension from being merged. A failed settings write keeps the screen open and reports the error instead of showing a false success state.
 
 The same sources were compiled against Minecraft 26.1.2 and 26.2 on 2026-07-22. This verifies compilation and resource processing; chat delivery, sound playback, and world-switch behavior still require an in-game test.
+
+## Credits
+
+Developed by `LTS_Server`. Licensed under the MIT License.

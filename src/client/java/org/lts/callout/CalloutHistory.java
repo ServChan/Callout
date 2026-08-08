@@ -58,6 +58,7 @@ public final class CalloutHistory {
             })
             .create();
     private static final Path HISTORY_PATH = FabricLoader.getInstance().getConfigDir().resolve("callout_history.json");
+    private static final Path HISTORY_BACKUP_PATH = HISTORY_PATH.resolveSibling(HISTORY_PATH.getFileName() + ".bak");
 
     private static final Deque<ChatLine> chatBuffer = new ArrayDeque<>();
     private static final Deque<PingEntry> pings = new ArrayDeque<>();
@@ -73,10 +74,16 @@ public final class CalloutHistory {
         if (!CalloutConfig.loadIfChanged().persistHistory) {
             return;
         }
-        if (!Files.exists(HISTORY_PATH)) {
-            return;
+        if (!loadFrom(HISTORY_PATH) && !loadFrom(HISTORY_BACKUP_PATH)) {
+            pings.clear();
         }
-        try (Reader reader = Files.newBufferedReader(HISTORY_PATH)) {
+    }
+
+    private static boolean loadFrom(Path path) {
+        if (!Files.isRegularFile(path)) {
+            return false;
+        }
+        try (Reader reader = Files.newBufferedReader(path)) {
             Type type = new TypeToken<List<PingEntry>>(){}.getType();
             List<PingEntry> loaded = GSON.fromJson(reader, type);
             if (loaded != null) {
@@ -88,10 +95,12 @@ public final class CalloutHistory {
                     }
                 }
                 trimHistory(CalloutConfig.loadIfChanged().maxPingHistory);
+                return true;
             }
         } catch (Exception exception) {
-            CalloutClient.LOGGER.warn("Failed to load history from {}", HISTORY_PATH, exception);
+            CalloutClient.LOGGER.warn("Failed to load history from {}", path, exception);
         }
+        return false;
     }
 
     public static synchronized void save() {
@@ -293,6 +302,10 @@ public final class CalloutHistory {
             try (Writer writer = Files.newBufferedWriter(temporary)) {
                 GSON.toJson(value, writer);
             }
+            if (Files.isRegularFile(path)) {
+                Files.copy(path, path.resolveSibling(path.getFileName() + ".bak"),
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
             try {
                 Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             } catch (AtomicMoveNotSupportedException ignored) {
@@ -379,7 +392,9 @@ public final class CalloutHistory {
         pendingPings.clear();
         try {
             Files.deleteIfExists(HISTORY_PATH);
-        } catch (IOException ignored) {
+            Files.deleteIfExists(HISTORY_BACKUP_PATH);
+        } catch (IOException exception) {
+            CalloutClient.LOGGER.warn("Failed to clear persisted callout history", exception);
         }
     }
 
