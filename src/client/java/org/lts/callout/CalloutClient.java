@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
@@ -40,6 +41,7 @@ public class CalloutClient implements ClientModInitializer {
     private boolean disconnected = true;
 
     private static final Pattern SENDER_CHAT_PATTERN = Pattern.compile("(?:^|.*?[\\s\\[\\]<>👤])([a-zA-Z0-9_]{3,16})\\s*[:»>|-]+\\s*(.*)");
+    private static final Pattern SENDER_USERNAME_PATTERN = Pattern.compile("([a-zA-Z0-9_]{3,16})");
 
     @Override
     public void onInitializeClient() {
@@ -56,6 +58,8 @@ public class CalloutClient implements ClientModInitializer {
             handleMessage(message, playerMessageText(playerChatMessage, message, sender), sender);
         });
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> handleMessage(message, message.getString(), null));
+        ClientSendMessageEvents.CHAT.register(this::onSendChat);
+        ClientSendMessageEvents.COMMAND.register(this::onSendCommand);
         ClientTickEvents.END_CLIENT_TICK.register(this::handleClientTick);
         ClientLifecycleEvents.CLIENT_STOPPING.register(minecraft -> {
             if (wasInWorld) {
@@ -63,6 +67,68 @@ public class CalloutClient implements ClientModInitializer {
                 CalloutHistory.save();
             }
         });
+    }
+
+    private static final java.util.Deque<SentMessage> RECENT_SENT_MESSAGES = new java.util.ArrayDeque<>();
+
+    private record SentMessage(String text, long timestamp) {}
+
+    private void onSendChat(String message) {
+        if (message != null && !message.isBlank()) {
+            recordSentMessage(message);
+        }
+    }
+
+    private void onSendCommand(String command) {
+        if (command == null || command.isBlank()) return;
+        String trimmed = command.trim();
+        String lower = trimmed.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("m ") || lower.startsWith("msg ") || lower.startsWith("tell ") || lower.startsWith("w ") || lower.startsWith("r ")) {
+            int firstSpace = trimmed.indexOf(' ');
+            if (firstSpace > 0) {
+                String sub = trimmed.substring(firstSpace + 1).trim();
+                if (lower.startsWith("r ")) {
+                    recordSentMessage(sub);
+                } else {
+                    int targetSpace = sub.indexOf(' ');
+                    if (targetSpace > 0) {
+                        recordSentMessage(sub.substring(targetSpace + 1).trim());
+                    }
+                }
+            }
+        }
+    }
+
+    private static void recordSentMessage(String text) {
+        if (text == null || text.isBlank()) return;
+        long now = System.currentTimeMillis();
+        synchronized (RECENT_SENT_MESSAGES) {
+            RECENT_SENT_MESSAGES.addLast(new SentMessage(text.trim(), now));
+            while (RECENT_SENT_MESSAGES.size() > 20) {
+                RECENT_SENT_MESSAGES.removeFirst();
+            }
+        }
+    }
+
+    private static boolean isRecentlySentByPlayer(String messageText) {
+        if (messageText == null || messageText.isBlank()) return false;
+        long now = System.currentTimeMillis();
+        String lowerMsg = messageText.toLowerCase(Locale.ROOT).trim();
+        synchronized (RECENT_SENT_MESSAGES) {
+            java.util.Iterator<SentMessage> iterator = RECENT_SENT_MESSAGES.iterator();
+            while (iterator.hasNext()) {
+                SentMessage sent = iterator.next();
+                if (now - sent.timestamp > 12000) {
+                    iterator.remove();
+                    continue;
+                }
+                String lowerSent = sent.text.toLowerCase(Locale.ROOT);
+                if (!lowerSent.isBlank() && (lowerMsg.contains(lowerSent) || lowerSent.contains(lowerMsg))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void handleClientTick(Minecraft minecraft) {
@@ -177,38 +243,134 @@ public class CalloutClient implements ClientModInitializer {
 
         String resolvedSender = senderProfile != null ? senderProfile.name() : null;
         String bodyText = rawMatchText != null && !rawMatchText.isBlank() ? rawMatchText : cleanText;
+        boolean isOwn = false;
 
-        if (resolvedSender == null || resolvedSender.isBlank()) {
-            Matcher matcher = SENDER_CHAT_PATTERN.matcher(cleanText);
-            if (matcher.find()) {
-                resolvedSender = matcher.group(1);
-                bodyText = matcher.group(2);
-            }
-        } else {
-            String name = resolvedSender.toLowerCase(Locale.ROOT);
-            String trimmed = cleanText.trim();
-            if (trimmed.startsWith("<")) {
-                int closeIdx = trimmed.indexOf('>');
-                if (closeIdx > 0 && trimmed.substring(0, closeIdx).toLowerCase(Locale.ROOT).contains(name)) {
-                    bodyText = trimmed.substring(closeIdx + 1).trim();
-                }
-            } else if (trimmed.toLowerCase(Locale.ROOT).contains(name + ":")) {
-                int idx = trimmed.toLowerCase(Locale.ROOT).indexOf(name + ":");
-                bodyText = trimmed.substring(idx + name.length() + 1).trim();
+        String ownName = minecraft.player != null ? minecraft.player.getGameProfile().name() : null;
+
+        // Layer 1: Check GameProfile sender UUID / name
+        if (minecraft.player != null && senderProfile != null) {
+            if (Objects.equals(minecraft.player.getGameProfile().id(), senderProfile.id())
+                    || (ownName != null && ownName.equalsIgnoreCase(senderProfile.name()))) {
+                isOwn = true;
             }
         }
 
-        boolean isOwn = false;
-        if (minecraft.player != null) {
-            String ownName = minecraft.player.getGameProfile().name();
-            if (senderProfile != null && Objects.equals(minecraft.player.getGameProfile().id(), senderProfile.id())) {
+        // Separate header and message body
+        int sepIndex = findMainChatSeparator(cleanText);
+        String header = sepIndex >= 0 ? cleanText.substring(0, sepIndex).trim() : cleanText;
+        if (sepIndex >= 0 && (rawMatchText == null || rawMatchText.isBlank() || rawMatchText.equals(fullText))) {
+            bodyText = cleanText.substring(sepIndex + 1).trim();
+            bodyText = bodyText.replaceAll("^[:»>\\-─→|•›~=]+\\s*", "");
+        }
+
+        // Layer 2: Outgoing Private Message Check (e.g. [Вы -> Nick], [Я -> Nick], [Me -> Nick], [To ...])
+        String lowerHeader = header.toLowerCase(Locale.ROOT);
+        if (lowerHeader.startsWith("[вы ") || lowerHeader.startsWith("[я ") || lowerHeader.startsWith("[me ")
+                || lowerHeader.startsWith("[you ") || lowerHeader.startsWith("[self ") || lowerHeader.startsWith("[to ")
+                || lowerHeader.startsWith("кому ") || lowerHeader.startsWith("to ")) {
+            isOwn = true;
+            if (ownName != null) resolvedSender = ownName;
+        }
+
+        // Layer 3: Sender resolution and Header Inspection
+        if (resolvedSender == null || resolvedSender.isBlank()) {
+            if (ownName != null && containsUsernameWord(header, ownName)) {
                 isOwn = true;
-            } else if (resolvedSender != null && resolvedSender.equalsIgnoreCase(ownName)) {
-                isOwn = true;
+                resolvedSender = ownName;
+            } else {
+                String extracted = extractLastUsername(header);
+                if (extracted != null) {
+                    resolvedSender = extracted;
+                    if (ownName != null && extracted.equalsIgnoreCase(ownName)) {
+                        isOwn = true;
+                    }
+                } else {
+                    Matcher legacyMatcher = SENDER_CHAT_PATTERN.matcher(cleanText);
+                    if (legacyMatcher.find()) {
+                        resolvedSender = legacyMatcher.group(1);
+                        bodyText = legacyMatcher.group(2);
+                        if (ownName != null && resolvedSender.equalsIgnoreCase(ownName)) {
+                            isOwn = true;
+                        }
+                    }
+                }
             }
+        } else if (ownName != null && resolvedSender.equalsIgnoreCase(ownName)) {
+            isOwn = true;
+        }
+
+        // Layer 4: Check recent local player outgoing sent messages
+        if (!isOwn && isRecentlySentByPlayer(bodyText.isBlank() ? cleanText : bodyText)) {
+            isOwn = true;
+            if (ownName != null) resolvedSender = ownName;
         }
 
         return new ParsedMessage(resolvedSender, bodyText, isOwn);
+    }
+
+    private static int findMainChatSeparator(String text) {
+        if (text == null || text.isBlank()) return -1;
+
+        int searchStart = 0;
+        while (searchStart < text.length() && text.charAt(searchStart) == '[') {
+            int closeBracket = text.indexOf(']', searchStart);
+            if (closeBracket > searchStart) {
+                String bracketContent = text.substring(searchStart, closeBracket + 1);
+                if (bracketContent.contains("->") || bracketContent.contains("─>") || bracketContent.contains("→")) {
+                    return closeBracket;
+                }
+                searchStart = closeBracket + 1;
+                while (searchStart < text.length() && Character.isWhitespace(text.charAt(searchStart))) {
+                    searchStart++;
+                }
+            } else {
+                break;
+            }
+        }
+
+        for (int i = searchStart; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == ':' || c == '»' || c == '>' || c == '→' || c == '›') {
+                return i;
+            }
+        }
+
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == ':' || c == '»' || c == '>' || c == '→' || c == '›') {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private static boolean containsUsernameWord(String text, String ownName) {
+        if (text == null || ownName == null || text.isBlank() || ownName.isBlank()) return false;
+        Matcher matcher = SENDER_USERNAME_PATTERN.matcher(text);
+        while (matcher.find()) {
+            if (matcher.group(1).equalsIgnoreCase(ownName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String extractLastUsername(String header) {
+        if (header == null || header.isBlank()) return null;
+        Matcher matcher = SENDER_USERNAME_PATTERN.matcher(header);
+        String last = null;
+        while (matcher.find()) {
+            String word = matcher.group(1);
+            String lower = word.toLowerCase(Locale.ROOT);
+            if (lower.equals("head") || lower.equals("global") || lower.equals("local")
+                    || lower.equals("admin") || lower.equals("vip") || lower.equals("chat")
+                    || lower.equals("server") || lower.equals("staff") || lower.equals("mod")) {
+                continue;
+            }
+            last = word;
+        }
+        return last;
     }
 
     private static void handleMessage(Component displayMessage, String matchText, GameProfile sender) {
