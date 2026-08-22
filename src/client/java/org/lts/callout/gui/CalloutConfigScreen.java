@@ -17,6 +17,13 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 public class CalloutConfigScreen extends Screen {
+    private static final int BG_CONTAINER = 0xF00D141F;
+    private static final int BG_HEADER = 0xFF182638;
+    private static final int BORDER_PRIMARY = 0xFF2E435E;
+    private static final int STATUS_ON = 0xFF55FF55;
+    private static final int STATUS_OFF = 0xFFFF5555;
+    private static final int ACCENT_CYAN = 0xFF00E5FF;
+
     private static final int FIELD_HEIGHT = 20;
     private static final int GAP = 6;
     private static final int TRIGGERS_PER_PAGE = 6;
@@ -59,7 +66,7 @@ public class CalloutConfigScreen extends Screen {
     protected void init() {
         int contentWidth = Math.min(700, this.width - 40);
         int left = (this.width - contentWidth) / 2;
-        int y = 32;
+        int y = 34;
 
         this.enabledButton = addRenderableWidget(toggleButton(left, y, 220, enabledLabel(), button -> {
             config.enabled = !config.enabled;
@@ -75,7 +82,7 @@ public class CalloutConfigScreen extends Screen {
             button.setMessage(ownLabel());
         }));
 
-        y = 62;
+        y = 64;
         maxPings = addField(left, y, 90, Integer.toString(config.maxPingHistory), "callout.hint.max_pings");
         contextBefore = addField(left + 100, y, 80, Integer.toString(config.contextBefore), "callout.hint.context_before");
         contextAfter = addField(left + 190, y, 80, Integer.toString(config.contextAfter), "callout.hint.context_after");
@@ -167,17 +174,22 @@ public class CalloutConfigScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float tickDelta) {
-        graphics.fill(0, 0, this.width, this.height, 0xF010141C);
-        graphics.centeredText(this.font, this.title, this.width / 2, 12, 0xFFFFFFFF);
+        graphics.fill(0, 0, this.width, this.height, BG_CONTAINER);
+
+        // Header Panel
+        graphics.fill(0, 0, this.width, 28, BG_HEADER);
+        graphics.fill(0, 27, this.width, 28, BORDER_PRIMARY);
+        int titleX = (this.width - this.font.width(this.title)) / 2;
+        graphics.text(this.font, this.title, titleX, 9, 0xFFFFFFFF, true);
 
         int contentWidth = Math.min(700, this.width - 40);
         int left = (this.width - contentWidth) / 2;
 
-        graphics.text(this.font, Component.translatable("callout.section.history"), left, 50, 0xFF88C0D0);
-        graphics.text(this.font, Component.translatable("callout.section.main_trigger"), left, 94, 0xFF88C0D0);
-        drawColumnHeaders(graphics, left, 106);
+        graphics.text(this.font, Component.translatable("callout.section.history"), left, 52, ACCENT_CYAN);
+        graphics.text(this.font, Component.translatable("callout.section.main_trigger"), left, 96, ACCENT_CYAN);
+        drawColumnHeaders(graphics, left, 108);
 
-        graphics.text(this.font, Component.translatable("callout.section.additional_triggers"), left, 152, 0xFF88C0D0);
+        graphics.text(this.font, Component.translatable("callout.section.additional_triggers"), left, 152, ACCENT_CYAN);
         graphics.text(this.font, Component.translatable("callout.triggers.page", triggerPage + 1, maxTriggerPage() + 1), left + 556, 154, 0xFFD8DEE9);
         drawColumnHeaders(graphics, left, 164);
         if (!validationError.isBlank()) {
@@ -202,7 +214,6 @@ public class CalloutConfigScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        // Keep footer actions reliable when an EditBox or another input mod has focus.
         if (saveButton != null && saveButton.mouseClicked(event, doubleClick)) {
             return true;
         }
@@ -214,7 +225,6 @@ public class CalloutConfigScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        // Escape cancels without collecting or saving the edited values.
         if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
             closeScreen();
             return true;
@@ -266,14 +276,15 @@ public class CalloutConfigScreen extends Screen {
     }
 
     private static Component onOff(boolean value) {
-        return Component.translatable(value ? "callout.state.on" : "callout.state.off");
+        return Component.translatable(value ? "callout.state.on" : "callout.state.off")
+                .withStyle(style -> style.withColor(value ? STATUS_ON : STATUS_OFF));
     }
 
     private void saveAndClose() {
-        collectCurrentValues();
         if (!validateAllInputs()) {
             return;
         }
+        collectCurrentValues();
         config.triggers.removeIf(trigger -> trigger.word == null || trigger.word.isBlank());
 
         if (CalloutConfig.save(config)) {
