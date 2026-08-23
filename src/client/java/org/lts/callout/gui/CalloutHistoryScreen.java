@@ -250,9 +250,10 @@ public class CalloutHistoryScreen extends Screen {
             clearConfirmationUntil = 0L;
             clearButton.setMessage(Component.translatable("callout.history.clear"));
         }
-        graphics.fill(0, 0, this.width, this.height, 0xF00B0E14);
-        graphics.fill(0, 0, this.width, 36, 0xFF141A24);
-        graphics.centeredText(this.font, this.title, this.width / 2, 12, 0xFFFFFFFF);
+        graphics.fill(0, 0, this.width, this.height, 0xF00D141F);
+        graphics.fill(0, 0, this.width, 36, 0xFF182638);
+        graphics.fill(0, 35, this.width, 36, 0xFF2E435E);
+        graphics.centeredText(this.font, this.title, this.width / 2, 9, 0xFFFFFFFF);
 
         List<CalloutHistory.PingEntry> entries = filteredEntries();
         int total = entries.size();
