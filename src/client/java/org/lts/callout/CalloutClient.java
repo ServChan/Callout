@@ -50,7 +50,7 @@ public class CalloutClient implements ClientModInitializer {
         historyKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.callout.ping_history",
                 InputConstants.Type.KEYSYM,
-                InputConstants.KEY_K,
+                InputConstants.KEY_APOSTROPHE,
                 CATEGORY
         ));
 
