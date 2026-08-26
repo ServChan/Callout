@@ -203,11 +203,15 @@ public class CalloutClient implements ClientModInitializer {
     private static String currentScope(Minecraft minecraft) {
         ServerData serverData = minecraft.getCurrentServer();
         if (serverData != null) {
+            // A single server address/name can expose multiple distinct worlds behind the
+            // same dimension (e.g. minigame lobbies); disambiguate with the stable world
+            // seed captured from the login/respawn packets so their history/session data
+            // doesn't collide. See WorldScopeTracker and AGENTS.md persistence rules.
             if (serverData.ip != null && !serverData.ip.isBlank()) {
-                return serverData.ip;
+                return serverData.ip + WorldScopeTracker.seedSuffix();
             }
             if (serverData.name != null && !serverData.name.isBlank()) {
-                return serverData.name;
+                return serverData.name + WorldScopeTracker.seedSuffix();
             }
         }
 
