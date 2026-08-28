@@ -39,7 +39,7 @@ Callout добавляет к обычному чату Minecraft:
 
 ### Настройки и Управление
 Открыть меню истории пингов:
-- `Ctrl + K` — открыть окно истории и контекста сообщений.
+- по умолчанию привязано к клавише `'` (апостроф); можно переназначить в меню управления Minecraft («Callout» → «Открыть историю пингов»).
 
 В меню настроек (через Mod Menu) доступны:
 - `Включен`: главный переключатель работы мода;
@@ -47,7 +47,8 @@ Callout добавляет к обычному чату Minecraft:
 - `Пинговать свои`: разрешает или запрещает звуковые пинги от собственных сообщений в чате;
 - `Основной триггер (Никнейм)`: слово, звук, громкость и тон для вашего ника;
 - `Дополнительные триггеры`: список независимых триггеров с добавлением, удалением и выбором режима `Text` / `Regex`;
-- настройки истории: максимальное число пингов, размер контекста до/после, сохранение истории и очистка при смене мира или сервера.
+- настройки истории: максимальное число пингов, размер контекста до/после, сохранение истории и очистка при смене мира или сервера;
+- `whisperCommand` (только в `config/callout.json`): шаблон команды для клика по нику в истории, по умолчанию `/msg %s ` (где `%s` — ник).
 
 ### Установка
 Для работы нужны:
@@ -65,7 +66,7 @@ Callout добавляет к обычному чату Minecraft:
 - Minecraft `26.1.2`-`26.2` (one JAR)
 - Java `25`
 - Fabric Loader `0.19.3+`
-- Текущая версия мода в проекте: `1.0.2`
+- Текущая версия мода в проекте: `1.0.3`
 
 Требования для сборки:
 - JDK 25
@@ -116,7 +117,7 @@ The mod includes:
 
 ### Controls & Settings
 Open ping history menu:
-- `Ctrl + K` — open mention history and chat context window.
+- bound to `'` (apostrophe) by default; rebind it in Minecraft's Controls menu ("Callout" → "Open ping history").
 
 Available settings in the config screen (via Mod Menu):
 - `Enabled`: main toggle for mod functionality;
@@ -124,7 +125,8 @@ Available settings in the config screen (via Mod Menu):
 - `Ping Own`: enables or disables audio alerts for your own chat messages;
 - `Main Trigger (Nickname)`: custom word, sound, volume, and pitch for your username;
 - `Additional Triggers`: an editable list of independent triggers with add/remove controls and configurable `Text` / `Regex` modes;
-- history settings: maximum stored pings, before/after context size, persistent storage, and clearing on world/server switch.
+- history settings: maximum stored pings, before/after context size, persistent storage, and clearing on world/server switch;
+- `whisperCommand` (`config/callout.json` only): template used when a sender name is clicked in the history screen, default `/msg %s ` (`%s` is the name).
 
 ### Installation
 Required:

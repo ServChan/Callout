@@ -28,11 +28,19 @@ public class CalloutConfigScreen extends Screen {
     private static final int GAP = 6;
     private static final int TRIGGERS_PER_PAGE = 6;
 
+    /** Reference width the fixed pixel offsets below were designed against. */
+    private static final int DESIGN_WIDTH = 700;
+
     private final Screen parent;
     private final CalloutConfig config;
     private final List<TriggerRow> triggerRows = new ArrayList<>();
     private int triggerPage;
     private String validationError = "";
+
+    // Horizontal layout is scaled down when the window is narrower than the design
+    // width so fields and buttons never spill off-screen at high GUI scale.
+    private double layoutScale = 1.0;
+    private int originX;
 
     private Button enabledButton;
     private Button caseButton;
@@ -64,46 +72,47 @@ public class CalloutConfigScreen extends Screen {
 
     @Override
     protected void init() {
-        int contentWidth = Math.min(700, this.width - 40);
-        int left = (this.width - contentWidth) / 2;
+        int contentWidth = Math.min(DESIGN_WIDTH, this.width - 20);
+        this.layoutScale = Math.min(1.0, contentWidth / (double) DESIGN_WIDTH);
+        this.originX = (this.width - contentWidth) / 2;
         int y = 34;
 
-        this.enabledButton = addRenderableWidget(toggleButton(left, y, 220, enabledLabel(), button -> {
+        this.enabledButton = addRenderableWidget(toggleButton(gx(0), y, gw(220), enabledLabel(), button -> {
             config.enabled = !config.enabled;
             button.setMessage(enabledLabel());
         }));
-        this.caseButton = addRenderableWidget(toggleButton(left + 230, y, 220, caseLabel(), button -> {
+        this.caseButton = addRenderableWidget(toggleButton(gx(230), y, gw(220), caseLabel(), button -> {
             config.caseSensitive = !config.caseSensitive;
             button.setMessage(caseLabel());
             validateAllInputs();
         }));
-        this.ownButton = addRenderableWidget(toggleButton(left + 460, y, 240, ownLabel(), button -> {
+        this.ownButton = addRenderableWidget(toggleButton(gx(460), y, gw(240), ownLabel(), button -> {
             config.pingOwnMessages = !config.pingOwnMessages;
             button.setMessage(ownLabel());
         }));
 
         y = 64;
-        maxPings = addField(left, y, 90, Integer.toString(config.maxPingHistory), "callout.hint.max_pings");
-        contextBefore = addField(left + 100, y, 80, Integer.toString(config.contextBefore), "callout.hint.context_before");
-        contextAfter = addField(left + 190, y, 80, Integer.toString(config.contextAfter), "callout.hint.context_after");
+        maxPings = addField(gx(0), y, gw(90), Integer.toString(config.maxPingHistory), "callout.hint.max_pings");
+        contextBefore = addField(gx(100), y, gw(80), Integer.toString(config.contextBefore), "callout.hint.context_before");
+        contextAfter = addField(gx(190), y, gw(80), Integer.toString(config.contextAfter), "callout.hint.context_after");
         maxPings.setResponder(text -> validateAllInputs());
         contextBefore.setResponder(text -> validateAllInputs());
         contextAfter.setResponder(text -> validateAllInputs());
-        persistButton = addRenderableWidget(toggleButton(left + 282, y, 190, persistLabel(), button -> {
+        persistButton = addRenderableWidget(toggleButton(gx(282), y, gw(190), persistLabel(), button -> {
             config.persistHistory = !config.persistHistory;
             button.setMessage(persistLabel());
         }));
-        clearScopeButton = addRenderableWidget(toggleButton(left + 482, y, 218, clearScopeLabel(), button -> {
+        clearScopeButton = addRenderableWidget(toggleButton(gx(482), y, gw(218), clearScopeLabel(), button -> {
             config.clearHistoryOnScopeChange = !config.clearHistoryOnScopeChange;
             button.setMessage(clearScopeLabel());
         }));
 
         y = 118;
-        nicknameWord = addField(left, y, 130, config.nickname.word, "callout.hint.nickname_word");
-        addRenderableWidget(regexButton(left + 136, y, 64, config.nickname));
-        nicknameSound = addField(left + 206, y, 214, config.nickname.sound, "callout.hint.sound");
-        nicknameVolume = addField(left + 430, y, 80, Float.toString(config.nickname.volume), "callout.hint.volume");
-        nicknamePitch = addField(left + 520, y, 80, Float.toString(config.nickname.pitch), "callout.hint.pitch");
+        nicknameWord = addField(gx(0), y, gw(130), config.nickname.word, "callout.hint.nickname_word");
+        addRenderableWidget(regexButton(gx(136), y, gw(64), config.nickname));
+        nicknameSound = addField(gx(206), y, gw(214), config.nickname.sound, "callout.hint.sound");
+        nicknameVolume = addField(gx(430), y, gw(80), Float.toString(config.nickname.volume), "callout.hint.volume");
+        nicknamePitch = addField(gx(520), y, gw(80), Float.toString(config.nickname.pitch), "callout.hint.pitch");
         nicknameWord.setResponder(text -> validateAllInputs());
         nicknameVolume.setResponder(text -> validateAllInputs());
         nicknamePitch.setResponder(text -> validateAllInputs());
@@ -120,11 +129,11 @@ public class CalloutConfigScreen extends Screen {
             TriggerRow row = new TriggerRow(
                     triggerIndex,
                     trigger,
-                    addField(left, y, 130, trigger.word, "callout.hint.word"),
-                    addRenderableWidget(regexButton(left + 136, y, 64, trigger)),
-                    addField(left + 206, y, 214, trigger.sound, "callout.hint.sound"),
-                    addField(left + 430, y, 80, Float.toString(trigger.volume), "callout.hint.volume"),
-                    addField(left + 520, y, 80, Float.toString(trigger.pitch), "callout.hint.pitch"),
+                    addField(gx(0), y, gw(130), trigger.word, "callout.hint.word"),
+                    addRenderableWidget(regexButton(gx(136), y, gw(64), trigger)),
+                    addField(gx(206), y, gw(214), trigger.sound, "callout.hint.sound"),
+                    addField(gx(430), y, gw(80), Float.toString(trigger.volume), "callout.hint.volume"),
+                    addField(gx(520), y, gw(80), Float.toString(trigger.pitch), "callout.hint.pitch"),
                     addRenderableWidget(Button.builder(Component.translatable("callout.button.remove"), button -> {
                         collectCurrentValues();
                         if (triggerIndex >= 0 && triggerIndex < config.triggers.size()) {
@@ -132,7 +141,7 @@ public class CalloutConfigScreen extends Screen {
                         }
                         triggerPage = Math.min(triggerPage, maxTriggerPage());
                         reopen();
-                    }).bounds(left + 610, y, 90, FIELD_HEIGHT).build())
+                    }).bounds(gx(610), y, gw(90), FIELD_HEIGHT).build())
             );
             row.word.setResponder(text -> validateAllInputs());
             row.volume.setResponder(text -> validateAllInputs());
@@ -148,19 +157,19 @@ public class CalloutConfigScreen extends Screen {
             config.triggers.add(new CalloutConfig.Trigger("", "minecraft:block.note_block.pling", 1.0F, 1.0F));
             triggerPage = maxTriggerPage();
             reopen();
-        }).bounds(left + 342, listY, 120, FIELD_HEIGHT).build());
+        }).bounds(gx(342), listY, gw(120), FIELD_HEIGHT).build());
         addRenderableWidget(Button.builder(Component.literal("<"), button -> {
             if (!validateAllInputs()) return;
             collectCurrentValues();
             triggerPage = Math.max(0, triggerPage - 1);
             reopen();
-        }).bounds(left + 472, listY, 36, FIELD_HEIGHT).build()).active = triggerPage > 0;
+        }).bounds(gx(472), listY, gw(36), FIELD_HEIGHT).build()).active = triggerPage > 0;
         addRenderableWidget(Button.builder(Component.literal(">"), button -> {
             if (!validateAllInputs()) return;
             collectCurrentValues();
             triggerPage = Math.min(maxTriggerPage(), triggerPage + 1);
             reopen();
-        }).bounds(left + 514, listY, 36, FIELD_HEIGHT).build()).active = triggerPage < maxTriggerPage();
+        }).bounds(gx(514), listY, gw(36), FIELD_HEIGHT).build()).active = triggerPage < maxTriggerPage();
 
         int buttonY = this.height - 30;
         saveButton = addRenderableWidget(Button.builder(Component.translatable("callout.button.save"), button -> saveAndClose())
@@ -182,16 +191,15 @@ public class CalloutConfigScreen extends Screen {
         int titleX = (this.width - this.font.width(this.title)) / 2;
         graphics.text(this.font, this.title, titleX, 9, 0xFFFFFFFF, true);
 
-        int contentWidth = Math.min(700, this.width - 40);
-        int left = (this.width - contentWidth) / 2;
+        int left = gx(0);
 
         graphics.text(this.font, Component.translatable("callout.section.history"), left, 52, ACCENT_CYAN);
         graphics.text(this.font, Component.translatable("callout.section.main_trigger"), left, 96, ACCENT_CYAN);
-        drawColumnHeaders(graphics, left, 108);
+        drawColumnHeaders(graphics, 108);
 
         graphics.text(this.font, Component.translatable("callout.section.additional_triggers"), left, 152, ACCENT_CYAN);
-        graphics.text(this.font, Component.translatable("callout.triggers.page", triggerPage + 1, maxTriggerPage() + 1), left + 556, 154, 0xFFD8DEE9);
-        drawColumnHeaders(graphics, left, 164);
+        graphics.text(this.font, Component.translatable("callout.triggers.page", triggerPage + 1, maxTriggerPage() + 1), gx(556), 154, 0xFFD8DEE9);
+        drawColumnHeaders(graphics, 164);
         if (!validationError.isBlank()) {
             graphics.centeredText(this.font, Component.literal(validationError), this.width / 2, this.height - 45, 0xFFFF5555);
         }
@@ -199,12 +207,22 @@ public class CalloutConfigScreen extends Screen {
         super.extractRenderState(graphics, mouseX, mouseY, tickDelta);
     }
 
-    private void drawColumnHeaders(GuiGraphicsExtractor graphics, int left, int y) {
-        graphics.text(this.font, Component.translatable("callout.field.word"), left, y, 0xFFD8DEE9);
-        graphics.text(this.font, Component.translatable("callout.field.match_mode"), left + 136, y, 0xFFD8DEE9);
-        graphics.text(this.font, Component.translatable("callout.field.sound"), left + 206, y, 0xFFD8DEE9);
-        graphics.text(this.font, Component.translatable("callout.field.volume"), left + 430, y, 0xFFD8DEE9);
-        graphics.text(this.font, Component.translatable("callout.field.pitch"), left + 520, y, 0xFFD8DEE9);
+    private void drawColumnHeaders(GuiGraphicsExtractor graphics, int y) {
+        graphics.text(this.font, Component.translatable("callout.field.word"), gx(0), y, 0xFFD8DEE9);
+        graphics.text(this.font, Component.translatable("callout.field.match_mode"), gx(136), y, 0xFFD8DEE9);
+        graphics.text(this.font, Component.translatable("callout.field.sound"), gx(206), y, 0xFFD8DEE9);
+        graphics.text(this.font, Component.translatable("callout.field.volume"), gx(430), y, 0xFFD8DEE9);
+        graphics.text(this.font, Component.translatable("callout.field.pitch"), gx(520), y, 0xFFD8DEE9);
+    }
+
+    /** Scaled X for a design-space horizontal offset. */
+    private int gx(int offset) {
+        return originX + (int) Math.round(offset * layoutScale);
+    }
+
+    /** Scaled width for a design-space widget width. */
+    private int gw(int width) {
+        return Math.max(14, (int) Math.round(width * layoutScale));
     }
 
     @Override

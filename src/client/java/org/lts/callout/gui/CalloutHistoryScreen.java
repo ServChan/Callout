@@ -216,7 +216,7 @@ public class CalloutHistoryScreen extends Screen {
 
                 if (mouseX >= curX && mouseX <= curX + senderWidth && mouseY >= headerY && mouseY <= headerY + 10) {
                     if (entry.sender != null && !entry.sender.isBlank() && !entry.sender.equals(Component.translatable("callout.history.sender.system").getString())) {
-                        this.minecraft.setScreenAndShow(new ChatScreen("/msg " + entry.sender + " ", false));
+                        this.minecraft.setScreenAndShow(new ChatScreen(whisperCommandFor(entry.sender), false));
                         return true;
                     }
                 }
@@ -425,6 +425,14 @@ public class CalloutHistoryScreen extends Screen {
 
     private static String safeText(String value) {
         return value == null ? "" : value;
+    }
+
+    private static String whisperCommandFor(String sender) {
+        String template = CalloutConfig.current().whisperCommand;
+        if (template == null || template.isBlank() || !template.contains("%s")) {
+            template = "/msg %s ";
+        }
+        return template.replace("%s", sender);
     }
 
     private static List<CalloutHistory.ChatLine> safeLines(List<CalloutHistory.ChatLine> lines) {

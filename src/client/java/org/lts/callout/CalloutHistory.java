@@ -66,6 +66,7 @@ public final class CalloutHistory {
     private static final Deque<PendingPing> pendingPings = new ArrayDeque<>();
     private static long nextSequence;
     private static String currentScope = "";
+    private static boolean dirty = false;
 
     private CalloutHistory() {
     }
@@ -104,6 +105,7 @@ public final class CalloutHistory {
     }
 
     public static synchronized void save() {
+        dirty = false;
         if (!CalloutConfig.loadIfChanged().persistHistory) {
             return;
         }
@@ -114,13 +116,20 @@ public final class CalloutHistory {
         }
     }
 
+    /** Persist pending ping changes if any accumulated since the last write. */
+    public static synchronized void flushIfDirty() {
+        if (dirty) {
+            save();
+        }
+    }
+
     public static boolean isRestoringChat = false;
 
     public static synchronized ChatLine observeDisplayed(Component message) {
         if (isRestoringChat) return null;
         
         CalloutConfig config = CalloutConfig.loadIfChanged();
-        String text = sanitize(message == null ? "" : message.getString());
+        String text = sanitizeText(message == null ? "" : message.getString());
 
         ChatLine line = new ChatLine(
                 nextSequence++,
@@ -140,14 +149,21 @@ public final class CalloutHistory {
         return line;
     }
 
-    private static String sanitize(String text) {
+    /**
+     * Strips the {@code [PlayerName head]} marker ChatHeads and similar mods splice
+     * into the rendered line. Shared with {@link CalloutClient} so both the trigger
+     * matcher and the stored history see identical text. The name run is matched
+     * loosely (any non-space, non-bracket characters) so long or decorated
+     * nicknames are still removed without a separate over-broad {@code head]} pass.
+     */
+    static String sanitizeText(String text) {
         if (text == null || text.isBlank()) {
             return text == null ? "" : text;
         }
-        return text.replaceAll("\\[?[A-Za-z0-9_]{3,16}\\s+head\\]", "")
-                   .replaceAll("head\\]", "")
-                   .trim();
+        return text.replaceAll("\\[?[^\\s\\[\\]]{1,32}\\s+head\\]", "").trim();
     }
+
+    private static final long PENDING_PING_TIMEOUT_MS = 4000L;
 
     public static synchronized void queuePing(String sender, String matchText, CalloutConfig.Trigger trigger) {
         PendingPing pendingPing = new PendingPing(
@@ -155,7 +171,8 @@ public final class CalloutHistory {
                 matchText == null ? "" : matchText,
                 trigger.word,
                 trigger.regex,
-                currentScope
+                currentScope,
+                System.currentTimeMillis()
         );
 
         if (!pendingPing.matchText.isBlank() && attachToRecentLine(pendingPing)) {
@@ -173,10 +190,16 @@ public final class CalloutHistory {
         if (buffer.isEmpty()) {
             return false;
         }
-        ChatLine line = buffer.get(buffer.size() - 1);
-        if (lineMatchesPending(line, pendingPing)) {
-            recordPing(line, pendingPing);
-            return true;
+        // The rendered line may already be in the buffer by the time the ping is
+        // queued, and a formatting mod can insert a line or two after it. Scan the
+        // last few entries rather than only the very last.
+        int scanFrom = Math.max(0, buffer.size() - 3);
+        for (int i = buffer.size() - 1; i >= scanFrom; i--) {
+            ChatLine line = buffer.get(i);
+            if (lineMatchesPending(line, pendingPing)) {
+                recordPing(line, pendingPing);
+                return true;
+            }
         }
         return false;
     }
@@ -189,6 +212,19 @@ public final class CalloutHistory {
         List<PendingPing> copy = new ArrayList<>(pendingPings);
         for (PendingPing pendingPing : copy) {
             if (lineMatchesPending(line, pendingPing)) {
+                recordPing(line, pendingPing);
+                pendingPings.remove(pendingPing);
+                return;
+            }
+        }
+
+        // Fallback: a ping whose text never lined up with a rendered line (unusual
+        // server formatting, regex-group extraction) would otherwise be dropped once
+        // the queue overflows. After a few seconds attach it to the current line so
+        // it is still recorded, with best-effort context.
+        long now = System.currentTimeMillis();
+        for (PendingPing pendingPing : copy) {
+            if (now - pendingPing.createdAt() >= PENDING_PING_TIMEOUT_MS) {
                 recordPing(line, pendingPing);
                 pendingPings.remove(pendingPing);
                 return;
@@ -237,7 +273,7 @@ public final class CalloutHistory {
         pings.addFirst(entry);
         trimHistory(config.maxPingHistory);
         awaitingAfter.add(entry);
-        save();
+        dirty = true;
     }
 
     private static void updateAwaitingAfter(ChatLine line) {
@@ -254,7 +290,7 @@ public final class CalloutHistory {
             }
         }
         if (changed) {
-            save();
+            dirty = true;
         }
     }
 
@@ -390,6 +426,7 @@ public final class CalloutHistory {
         pings.clear();
         awaitingAfter.clear();
         pendingPings.clear();
+        dirty = false;
         try {
             Files.deleteIfExists(HISTORY_PATH);
             Files.deleteIfExists(HISTORY_BACKUP_PATH);
@@ -463,7 +500,7 @@ public final class CalloutHistory {
         }
     }
 
-    private record PendingPing(String sender, String matchText, String trigger, boolean regex, String scope) {
+    private record PendingPing(String sender, String matchText, String trigger, boolean regex, String scope, long createdAt) {
     }
 
     public static final class PingEntry {

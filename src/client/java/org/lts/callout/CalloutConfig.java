@@ -34,6 +34,8 @@ public class CalloutConfig {
     public int contextAfter = 5;
     public boolean persistHistory = true;
     public boolean clearHistoryOnScopeChange = false;
+    /** Chat input pre-filled when a sender name is clicked in the history screen. {@code %s} is the name. */
+    public String whisperCommand = "/msg %s ";
     public Trigger nickname = new Trigger("", "minecraft:block.note_block.pling", 1.0F, 1.0F);
     public List<Trigger> triggers = new ArrayList<>();
 
@@ -185,6 +187,7 @@ public class CalloutConfig {
         copy.contextAfter = contextAfter;
         copy.persistHistory = persistHistory;
         copy.clearHistoryOnScopeChange = clearHistoryOnScopeChange;
+        copy.whisperCommand = whisperCommand;
         copy.nickname = nickname == null ? null : nickname.copy();
         copy.triggers = new ArrayList<>();
         if (triggers != null) {
@@ -202,6 +205,9 @@ public class CalloutConfig {
         config.maxPingHistory = clamp(config.maxPingHistory, 1, 1000);
         config.contextBefore = clamp(config.contextBefore, 0, 20);
         config.contextAfter = clamp(config.contextAfter, 0, 20);
+        if (config.whisperCommand == null || config.whisperCommand.isBlank() || !config.whisperCommand.contains("%s")) {
+            config.whisperCommand = "/msg %s ";
+        }
         config.nickname.sanitize();
 
         if (config.triggers == null) {
