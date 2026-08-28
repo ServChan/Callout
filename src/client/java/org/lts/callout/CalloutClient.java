@@ -38,6 +38,7 @@ public class CalloutClient implements ClientModInitializer {
     private boolean wasInWorld = false;
     private String lastScope = "";
     private int tickCount = 0;
+    private int historyFlushTicks = 0;
     private boolean disconnected = true;
 
     private static final Pattern SENDER_CHAT_PATTERN = Pattern.compile("(?:^|.*?[\\s\\[\\]<>👤])([a-zA-Z0-9_]{3,16})\\s*[:»>|-]+\\s*(.*)");
@@ -57,7 +58,13 @@ public class CalloutClient implements ClientModInitializer {
         ClientReceiveMessageEvents.CHAT.register((message, playerChatMessage, sender, boundChatType, timeStamp) -> {
             handleMessage(message, playerMessageText(playerChatMessage, message, sender), sender);
         });
-        ClientReceiveMessageEvents.GAME.register((message, overlay) -> handleMessage(message, message.getString(), null));
+        ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+            // Skip the action bar: other mods/servers push coordinates, timers and
+            // similar overlay text there, which would produce false pings.
+            if (!overlay) {
+                handleMessage(message, message.getString(), null);
+            }
+        });
         ClientSendMessageEvents.CHAT.register(this::onSendChat);
         ClientSendMessageEvents.COMMAND.register(this::onSendCommand);
         ClientTickEvents.END_CLIENT_TICK.register(this::handleClientTick);
@@ -110,6 +117,14 @@ public class CalloutClient implements ClientModInitializer {
         }
     }
 
+    /**
+     * Minimum overlap length before a recently sent message is treated as the source
+     * of an incoming line. Without this, short fragments the player just typed
+     * ("k", "gg", "lol") would suppress every legitimate ping that happens to
+     * contain them as a substring.
+     */
+    private static final int MIN_ECHO_OVERLAP = 5;
+
     private static boolean isRecentlySentByPlayer(String messageText) {
         if (messageText == null || messageText.isBlank()) return false;
         long now = System.currentTimeMillis();
@@ -122,8 +137,20 @@ public class CalloutClient implements ClientModInitializer {
                     iterator.remove();
                     continue;
                 }
-                String lowerSent = sent.text.toLowerCase(Locale.ROOT);
-                if (!lowerSent.isBlank() && (lowerMsg.contains(lowerSent) || lowerSent.contains(lowerMsg))) {
+                String lowerSent = sent.text.toLowerCase(Locale.ROOT).trim();
+                if (lowerSent.isBlank()) {
+                    continue;
+                }
+                if (lowerSent.equals(lowerMsg)) {
+                    return true;
+                }
+                if (lowerMsg.contains(lowerSent) && lowerSent.length() >= MIN_ECHO_OVERLAP) {
+                    return true;
+                }
+                // Server reformatted/truncated our line: only accept when the incoming
+                // text is itself a substantial chunk of what we sent.
+                if (lowerSent.contains(lowerMsg) && lowerMsg.length() >= MIN_ECHO_OVERLAP
+                        && lowerSent.length() <= lowerMsg.length() * 3L) {
                     return true;
                 }
             }
@@ -175,6 +202,12 @@ public class CalloutClient implements ClientModInitializer {
             }
             lastScope = scope;
 
+            historyFlushTicks++;
+            if (historyFlushTicks >= 100) {
+                historyFlushTicks = 0;
+                CalloutHistory.flushIfDirty();
+            }
+
             tickCount++;
             if (tickCount >= 1200) {
                 tickCount = 0;
@@ -189,15 +222,10 @@ public class CalloutClient implements ClientModInitializer {
         wasInWorld = isInWorld;
 
         while (historyKey.consumeClick()) {
-            if (isInWorld && isControlDown(minecraft) && MinecraftScreenAccess.getScreen(minecraft) == null) {
+            if (isInWorld && MinecraftScreenAccess.getScreen(minecraft) == null) {
                 minecraft.setScreenAndShow(new CalloutHistoryScreen());
             }
         }
-    }
-
-    private static boolean isControlDown(Minecraft minecraft) {
-        return InputConstants.isKeyDown(minecraft.getWindow(), InputConstants.KEY_LCONTROL)
-                || InputConstants.isKeyDown(minecraft.getWindow(), InputConstants.KEY_RCONTROL);
     }
 
     private static String currentScope(Minecraft minecraft) {
@@ -243,7 +271,7 @@ public class CalloutClient implements ClientModInitializer {
 
     private static ParsedMessage parseChatMessage(Component displayMessage, String rawMatchText, GameProfile senderProfile, Minecraft minecraft) {
         String fullText = displayMessage != null ? displayMessage.getString() : (rawMatchText != null ? rawMatchText : "");
-        String cleanText = fullText.replaceAll("\\[?[A-Za-z0-9_]{3,16}\\s+head\\]", "").replaceAll("head\\]", "").trim();
+        String cleanText = CalloutHistory.sanitizeText(fullText);
 
         String resolvedSender = senderProfile != null ? senderProfile.name() : null;
         String bodyText = rawMatchText != null && !rawMatchText.isBlank() ? rawMatchText : cleanText;
@@ -416,11 +444,28 @@ public class CalloutClient implements ClientModInitializer {
 
         int flags = caseSensitive ? 0 : Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
         try {
-            return Pattern.compile(trigger.word, flags).matcher(message).find();
+            return compiledPattern(trigger.word, flags).matcher(message).find();
         } catch (PatternSyntaxException exception) {
             LOGGER.warn("Invalid Callout regex: {}", trigger.word, exception);
             return false;
         }
+    }
+
+    private static final java.util.concurrent.ConcurrentHashMap<String, Pattern> REGEX_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static Pattern compiledPattern(String pattern, int flags) {
+        // Chat messages arrive at a high rate; recompiling every regex per message
+        // was measurable overhead on busy servers. The key covers the flags so a
+        // case-sensitivity toggle produces a distinct entry.
+        Pattern cached = REGEX_CACHE.get(flags + " " + pattern);
+        if (cached != null) {
+            return cached;
+        }
+        Pattern compiled = Pattern.compile(pattern, flags);
+        if (REGEX_CACHE.size() < 256) {
+            REGEX_CACHE.put(flags + " " + pattern, compiled);
+        }
+        return compiled;
     }
 
     private static void showSelfTestHintOnce(CalloutConfig config, CalloutConfig.Trigger trigger, String matchText, GameProfile sender, String resolvedSender) {
