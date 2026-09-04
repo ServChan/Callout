@@ -127,6 +127,7 @@ Available settings in the config screen (via Mod Menu):
 - `Additional Triggers`: an editable list of independent triggers with add/remove controls and configurable `Text` / `Regex` modes;
 - history settings: maximum stored pings, before/after context size, persistent storage, and clearing on world/server switch;
 - `whisperCommand` (`config/callout.json` only): template used when a sender name is clicked in the history screen, default `/msg %s ` (`%s` is the name).
+- `separateHistoryByWorld` (`config/callout.json` only): when `true`, worlds behind one server address (minigame lobbies, etc.) keep separate history via the spawn seed; default `false`, so every world on a server shares one history and switching worlds does not split the chat.
 
 ### Installation
 Required:
@@ -162,7 +163,7 @@ Output:
 
 ### Persistence and verification
 
-Configuration, ping history, and per-session chat buffers are written through sibling temporary files and replaced atomically where the filesystem supports it. Existing files are copied to sibling `.bak` backups before replacement, and configuration/history loading can recover from them. Multiplayer scopes include server address, dimension, and stable spawn-info seed, preventing history from different plugin worlds with the same dimension from being merged. A failed settings write keeps the screen open and reports the error instead of showing a false success state.
+Configuration, ping history, and per-session chat buffers are written through sibling temporary files and replaced atomically where the filesystem supports it. Existing files are copied to sibling `.bak` backups before replacement, and configuration/history loading can recover from them. Multiplayer scopes are keyed by server address (or dimension as a fallback); the stable spawn-info seed is appended only when `separateHistoryByWorld` is enabled, so by default every world on a server shares one history while opt-in users can still keep plugin worlds apart. A failed settings write keeps the screen open and reports the error instead of showing a false success state.
 
 The same sources were compiled against Minecraft 26.1.2 and 26.2 on 2026-07-22. This verifies compilation and resource processing; chat delivery, sound playback, and world-switch behavior still require an in-game test.
 

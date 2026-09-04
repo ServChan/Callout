@@ -232,14 +232,18 @@ public class CalloutClient implements ClientModInitializer {
         ServerData serverData = minecraft.getCurrentServer();
         if (serverData != null) {
             // A single server address/name can expose multiple distinct worlds behind the
-            // same dimension (e.g. minigame lobbies); disambiguate with the stable world
-            // seed captured from the login/respawn packets so their history/session data
-            // doesn't collide. See WorldScopeTracker and AGENTS.md persistence rules.
+            // same dimension (e.g. minigame lobbies). Only disambiguate them with the stable
+            // world seed captured from the login/respawn packets when the player opted into
+            // per-world separation; by default a multi-world server shares one history so
+            // switching worlds (builds <-> farms, Multiverse, etc.) does not split the chat.
+            String seedSuffix = CalloutConfig.loadIfChanged().separateHistoryByWorld
+                    ? WorldScopeTracker.seedSuffix()
+                    : "";
             if (serverData.ip != null && !serverData.ip.isBlank()) {
-                return serverData.ip + WorldScopeTracker.seedSuffix();
+                return serverData.ip + seedSuffix;
             }
             if (serverData.name != null && !serverData.name.isBlank()) {
-                return serverData.name + WorldScopeTracker.seedSuffix();
+                return serverData.name + seedSuffix;
             }
         }
 
