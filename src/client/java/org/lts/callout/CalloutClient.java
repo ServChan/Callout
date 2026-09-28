@@ -50,7 +50,7 @@ public class CalloutClient implements ClientModInitializer {
         CalloutHistory.load();
         historyKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.callout.ping_history",
-                InputConstants.Type.KEYSYM,
+                InputConstants.Type.KEYBOARD,
                 InputConstants.KEY_APOSTROPHE,
                 CATEGORY
         ));
@@ -59,8 +59,7 @@ public class CalloutClient implements ClientModInitializer {
             handleMessage(message, playerMessageText(playerChatMessage, message, sender), sender);
         });
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
-            // Skip the action bar: other mods/servers push coordinates, timers and
-            // similar overlay text there, which would produce false pings.
+
             if (!overlay) {
                 handleMessage(message, message.getString(), null);
             }
@@ -117,12 +116,6 @@ public class CalloutClient implements ClientModInitializer {
         }
     }
 
-    /**
-     * Minimum overlap length before a recently sent message is treated as the source
-     * of an incoming line. Without this, short fragments the player just typed
-     * ("k", "gg", "lol") would suppress every legitimate ping that happens to
-     * contain them as a substring.
-     */
     private static final int MIN_ECHO_OVERLAP = 5;
 
     private static boolean isRecentlySentByPlayer(String messageText) {
@@ -147,8 +140,7 @@ public class CalloutClient implements ClientModInitializer {
                 if (lowerMsg.contains(lowerSent) && lowerSent.length() >= MIN_ECHO_OVERLAP) {
                     return true;
                 }
-                // Server reformatted/truncated our line: only accept when the incoming
-                // text is itself a substantial chunk of what we sent.
+
                 if (lowerSent.contains(lowerMsg) && lowerMsg.length() >= MIN_ECHO_OVERLAP
                         && lowerSent.length() <= lowerMsg.length() * 3L) {
                     return true;
@@ -231,11 +223,7 @@ public class CalloutClient implements ClientModInitializer {
     private static String currentScope(Minecraft minecraft) {
         ServerData serverData = minecraft.getCurrentServer();
         if (serverData != null) {
-            // A single server address/name can expose multiple distinct worlds behind the
-            // same dimension (e.g. minigame lobbies). Only disambiguate them with the stable
-            // world seed captured from the login/respawn packets when the player opted into
-            // per-world separation; by default a multi-world server shares one history so
-            // switching worlds (builds <-> farms, Multiverse, etc.) does not split the chat.
+
             String seedSuffix = CalloutConfig.loadIfChanged().separateHistoryByWorld
                     ? WorldScopeTracker.seedSuffix()
                     : "";
@@ -283,7 +271,6 @@ public class CalloutClient implements ClientModInitializer {
 
         String ownName = minecraft.player != null ? minecraft.player.getGameProfile().name() : null;
 
-        // Layer 1: Check GameProfile sender UUID / name
         if (minecraft.player != null && senderProfile != null) {
             if (Objects.equals(minecraft.player.getGameProfile().id(), senderProfile.id())
                     || (ownName != null && ownName.equalsIgnoreCase(senderProfile.name()))) {
@@ -291,7 +278,6 @@ public class CalloutClient implements ClientModInitializer {
             }
         }
 
-        // Separate header and message body
         int sepIndex = findMainChatSeparator(cleanText);
         String header = sepIndex >= 0 ? cleanText.substring(0, sepIndex).trim() : cleanText;
         if (sepIndex >= 0 && (rawMatchText == null || rawMatchText.isBlank() || rawMatchText.equals(fullText))) {
@@ -299,7 +285,6 @@ public class CalloutClient implements ClientModInitializer {
             bodyText = bodyText.replaceAll("^[:»>\\-─→|•›~=]+\\s*", "");
         }
 
-        // Layer 2: Outgoing Private Message Check (e.g. [Вы -> Nick], [Я -> Nick], [Me -> Nick], [To ...])
         String lowerHeader = header.toLowerCase(Locale.ROOT);
         if (lowerHeader.startsWith("[вы ") || lowerHeader.startsWith("[я ") || lowerHeader.startsWith("[me ")
                 || lowerHeader.startsWith("[you ") || lowerHeader.startsWith("[self ") || lowerHeader.startsWith("[to ")
@@ -308,7 +293,6 @@ public class CalloutClient implements ClientModInitializer {
             if (ownName != null) resolvedSender = ownName;
         }
 
-        // Layer 3: Sender resolution and Header Inspection
         if (resolvedSender == null || resolvedSender.isBlank()) {
             if (ownName != null && containsUsernameWord(header, ownName)) {
                 isOwn = true;
@@ -335,7 +319,6 @@ public class CalloutClient implements ClientModInitializer {
             isOwn = true;
         }
 
-        // Layer 4: Check recent local player outgoing sent messages
         if (!isOwn && isRecentlySentByPlayer(bodyText.isBlank() ? cleanText : bodyText)) {
             isOwn = true;
             if (ownName != null) resolvedSender = ownName;
@@ -458,9 +441,7 @@ public class CalloutClient implements ClientModInitializer {
     private static final java.util.concurrent.ConcurrentHashMap<String, Pattern> REGEX_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
     private static Pattern compiledPattern(String pattern, int flags) {
-        // Chat messages arrive at a high rate; recompiling every regex per message
-        // was measurable overhead on busy servers. The key covers the flags so a
-        // case-sensitivity toggle produces a distinct entry.
+
         Pattern cached = REGEX_CACHE.get(flags + " " + pattern);
         if (cached != null) {
             return cached;

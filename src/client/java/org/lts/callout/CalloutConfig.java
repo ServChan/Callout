@@ -34,15 +34,9 @@ public class CalloutConfig {
     public int contextAfter = 5;
     public boolean persistHistory = true;
     public boolean clearHistoryOnScopeChange = false;
-    /**
-     * When {@code true}, the history/session scope of a multiplayer server also includes the
-     * world's spawn-info seed, so distinct plugin worlds behind one server address (e.g. minigame
-     * lobbies) keep separate history. When {@code false} (default) every world on a server shares
-     * one history, which is what most multi-world survival servers want. {@code config/callout.json}
-     * only; there is no GUI toggle.
-     */
+
     public boolean separateHistoryByWorld = false;
-    /** Chat input pre-filled when a sender name is clicked in the history screen. {@code %s} is the name. */
+
     public String whisperCommand = "/msg %s ";
     public Trigger nickname = new Trigger("", "minecraft:block.note_block.pling", 1.0F, 1.0F);
     public List<Trigger> triggers = new ArrayList<>();

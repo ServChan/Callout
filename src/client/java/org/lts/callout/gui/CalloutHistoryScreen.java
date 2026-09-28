@@ -11,7 +11,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -186,7 +186,7 @@ public class CalloutHistoryScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        // Exit must remain clickable even if another widget or an input mod consumes the event.
+
         if (closeButton != null && closeButton.mouseClicked(event, doubleClick)) {
             return true;
         }
@@ -195,7 +195,7 @@ public class CalloutHistoryScreen extends Screen {
         double mouseY = event.y();
         int button = event.button();
 
-        if (button == 0) {
+        if (button == InputConstants.MOUSE_BUTTON_LEFT) {
             List<CalloutHistory.PingEntry> entries = filteredEntries();
             int pageSize = pageSize();
             int start = page * pageSize;
@@ -305,8 +305,8 @@ public class CalloutHistoryScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        // Handle Escape before the focused search field can consume it.
-        if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             closeScreen();
             return true;
         }

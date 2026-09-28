@@ -6,9 +6,6 @@ import java.lang.reflect.Method;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 
-/**
- * Reads the active screen across the API move from Minecraft to Minecraft.gui in 26.2.
- */
 public final class MinecraftScreenAccess {
     private static final Access ACCESS = createAccess();
 
@@ -19,10 +16,6 @@ public final class MinecraftScreenAccess {
         return ACCESS.getScreen(minecraft);
     }
 
-    /**
-     * Closes the active screen across the API move from Minecraft to Minecraft.gui in 26.2.
-     * Passing {@code null} also avoids restoring a stale Mod Menu/inventory parent screen.
-     */
     public static void closeScreen(Minecraft minecraft) {
         try {
             try {

@@ -7,10 +7,9 @@ version = project.mod_version
 group = project.maven_group
 def modVersion = project.version.toString()
 def licenseArchiveName = project.name
-def minecraftVersionKey = project.minecraft_version.toString().replace('.', '_')
-def fabricMessageApiVersion = project.property("fabric_message_api_version_${minecraftVersionKey}")
-def fabricKeyMappingApiVersion = project.property("fabric_key_mapping_api_version_${minecraftVersionKey}")
-def fabricLifecycleEventsVersion = project.property("fabric_lifecycle_events_version_${minecraftVersionKey}")
+def fabricMessageApiVersion = project.property("fabric_message_api_version")
+def fabricKeyMappingApiVersion = project.property("fabric_key_mapping_api_version")
+def fabricLifecycleEventsVersion = project.property("fabric_lifecycle_events_version")
 def localModMenu = file(project.modmenu_jar)
 
 base {

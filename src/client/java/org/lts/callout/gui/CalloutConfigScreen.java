@@ -9,7 +9,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +28,6 @@ public class CalloutConfigScreen extends Screen {
     private static final int GAP = 6;
     private static final int TRIGGERS_PER_PAGE = 6;
 
-    /** Reference width the fixed pixel offsets below were designed against. */
     private static final int DESIGN_WIDTH = 700;
 
     private final Screen parent;
@@ -37,8 +36,6 @@ public class CalloutConfigScreen extends Screen {
     private int triggerPage;
     private String validationError = "";
 
-    // Horizontal layout is scaled down when the window is narrower than the design
-    // width so fields and buttons never spill off-screen at high GUI scale.
     private double layoutScale = 1.0;
     private int originX;
 
@@ -185,7 +182,6 @@ public class CalloutConfigScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float tickDelta) {
         graphics.fill(0, 0, this.width, this.height, BG_CONTAINER);
 
-        // Header Panel
         graphics.fill(0, 0, this.width, 28, BG_HEADER);
         graphics.fill(0, 27, this.width, 28, BORDER_PRIMARY);
         int titleX = (this.width - this.font.width(this.title)) / 2;
@@ -215,12 +211,10 @@ public class CalloutConfigScreen extends Screen {
         graphics.text(this.font, Component.translatable("callout.field.pitch"), gx(520), y, 0xFFD8DEE9);
     }
 
-    /** Scaled X for a design-space horizontal offset. */
     private int gx(int offset) {
         return originX + (int) Math.round(offset * layoutScale);
     }
 
-    /** Scaled width for a design-space widget width. */
     private int gw(int width) {
         return Math.max(14, (int) Math.round(width * layoutScale));
     }
@@ -243,7 +237,7 @@ public class CalloutConfigScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             closeScreen();
             return true;
         }

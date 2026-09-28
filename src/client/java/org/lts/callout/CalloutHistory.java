@@ -116,7 +116,6 @@ public final class CalloutHistory {
         }
     }
 
-    /** Persist pending ping changes if any accumulated since the last write. */
     public static synchronized void flushIfDirty() {
         if (dirty) {
             save();
@@ -127,7 +126,7 @@ public final class CalloutHistory {
 
     public static synchronized ChatLine observeDisplayed(Component message) {
         if (isRestoringChat) return null;
-        
+
         CalloutConfig config = CalloutConfig.loadIfChanged();
         String text = sanitizeText(message == null ? "" : message.getString());
 
@@ -149,13 +148,6 @@ public final class CalloutHistory {
         return line;
     }
 
-    /**
-     * Strips the {@code [PlayerName head]} marker ChatHeads and similar mods splice
-     * into the rendered line. Shared with {@link CalloutClient} so both the trigger
-     * matcher and the stored history see identical text. The name run is matched
-     * loosely (any non-space, non-bracket characters) so long or decorated
-     * nicknames are still removed without a separate over-broad {@code head]} pass.
-     */
     static String sanitizeText(String text) {
         if (text == null || text.isBlank()) {
             return text == null ? "" : text;
@@ -190,9 +182,7 @@ public final class CalloutHistory {
         if (buffer.isEmpty()) {
             return false;
         }
-        // The rendered line may already be in the buffer by the time the ping is
-        // queued, and a formatting mod can insert a line or two after it. Scan the
-        // last few entries rather than only the very last.
+
         int scanFrom = Math.max(0, buffer.size() - 3);
         for (int i = buffer.size() - 1; i >= scanFrom; i--) {
             ChatLine line = buffer.get(i);
@@ -218,10 +208,6 @@ public final class CalloutHistory {
             }
         }
 
-        // Fallback: a ping whose text never lined up with a rendered line (unusual
-        // server formatting, regex-group extraction) would otherwise be dropped once
-        // the queue overflows. After a few seconds attach it to the current line so
-        // it is still recorded, with best-effort context.
         long now = System.currentTimeMillis();
         for (PendingPing pendingPing : copy) {
             if (now - pendingPing.createdAt() >= PENDING_PING_TIMEOUT_MS) {
@@ -378,7 +364,7 @@ public final class CalloutHistory {
             path = findLegacySessionFile(scope);
             if (path == null || !Files.exists(path)) return;
         }
-        
+
         try (java.io.Reader reader = Files.newBufferedReader(path)) {
             java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<List<ChatLine>>(){}.getType();
             List<ChatLine> loaded = GSON.fromJson(reader, type);

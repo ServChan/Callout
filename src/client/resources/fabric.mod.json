@@ -30,7 +30,7 @@
   ],
   "depends": {
     "fabricloader": ">=0.19.3",
-    "minecraft": ">=26.1.2 <=26.2",
+    "minecraft": "~26.3",
     "java": ">=25",
     "fabric-message-api-v1": "*",
     "fabric-key-mapping-api-v1": "*",
