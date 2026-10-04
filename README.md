@@ -23,6 +23,7 @@ Client-side Fabric mod that watches chat for text/regex triggers, plays configur
 - фильтр истории по миру или серверу для разбора AFK-пингов конкретной сессии;
 - очистка текста от служебных артефактов и тегов сторонних модов (например, ChatHeads);
 - фильтрация технических префиксов отправителя в одиночной игре и LAN, чтобы исключить ложные самопинги;
+- история чата расширена со 100 до 16384 сообщений;
 - плавная навигация с пагинацией и колесом мыши;
 - персистентное сохранение истории между выходами из мира и перезапусками игры.
 
@@ -71,6 +72,7 @@ Client-side Fabric mod that watches chat for text/regex triggers, plays configur
 - world/server history filtering for reviewing a specific AFK session;
 - text sanitization that strips third-party mod tags (e.g. ChatHeads artifacts);
 - singleplayer/LAN sender-prefix filtering to prevent false self-pings;
+- chat scrollback extended from 100 to 16384 messages;
 - smooth navigation with pagination and mouse-wheel scrolling;
 - persistent history that survives exiting worlds and restarting the game.
 
