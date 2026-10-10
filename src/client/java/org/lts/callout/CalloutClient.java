@@ -21,8 +21,6 @@ import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -32,7 +30,8 @@ import java.util.regex.PatternSyntaxException;
 
 public class CalloutClient implements ClientModInitializer {
     public static final String MOD_ID = "callout";
-    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    public static final ModLog LOGGER = ModLog.root();
+    private static final java.util.Set<String> REPORTED = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(MOD_ID, "main"));
     private static KeyMapping historyKey;
     private boolean wasInWorld = false;
@@ -71,6 +70,7 @@ public class CalloutClient implements ClientModInitializer {
                 CalloutHistory.save();
             }
         });
+        LOGGER.ready();
     }
 
     private static final java.util.Deque<SentMessage> RECENT_SENT_MESSAGES = new java.util.ArrayDeque<>();
@@ -407,7 +407,9 @@ public class CalloutClient implements ClientModInitializer {
         try {
             return compiledPattern(trigger.word, flags).matcher(message).find();
         } catch (PatternSyntaxException exception) {
-            LOGGER.warn("Invalid Callout regex: {}", trigger.word, exception);
+            if (REPORTED.add("regex:" + trigger.word)) {
+                LOGGER.warn("Trigger regex {} is invalid and never matches", trigger.word, exception);
+            }
             return false;
         }
     }
@@ -454,13 +456,17 @@ public class CalloutClient implements ClientModInitializer {
     private static void playSound(CalloutConfig.Trigger trigger) {
         Identifier soundId = Identifier.tryParse(trigger.sound);
         if (soundId == null) {
-            LOGGER.warn("Invalid Callout sound id: {}", trigger.sound);
+            if (REPORTED.add("sound:" + trigger.sound)) {
+                LOGGER.warn("Trigger sound {} is not a valid id; the ping plays silently", trigger.sound);
+            }
             return;
         }
 
         SoundEvent sound = BuiltInRegistries.SOUND_EVENT.getValue(soundId);
         if (sound == null) {
-            LOGGER.warn("Unknown Callout sound id: {}", soundId);
+            if (REPORTED.add("sound:" + soundId)) {
+                LOGGER.warn("Trigger sound {} does not exist; the ping plays silently", soundId);
+            }
             return;
         }
 

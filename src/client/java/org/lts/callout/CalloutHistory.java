@@ -70,7 +70,7 @@ public final class CalloutHistory {
                 return true;
             }
         } catch (Exception exception) {
-            CalloutClient.LOGGER.warn("Failed to load history from {}", path, exception);
+            CalloutClient.LOGGER.warn("Could not read ping history {}; starting empty", path, exception);
         }
         return false;
     }
@@ -83,7 +83,7 @@ public final class CalloutHistory {
         try {
             writeAtomically(HISTORY_PATH, new ArrayList<>(pings));
         } catch (Exception exception) {
-            CalloutClient.LOGGER.warn("Failed to save history to {}", HISTORY_PATH, exception);
+            CalloutClient.LOGGER.warn("Could not save ping history {}", HISTORY_PATH, exception);
         }
     }
 
@@ -255,7 +255,6 @@ public final class CalloutHistory {
         return Collections.unmodifiableList(new ArrayList<>(pings));
     }
 
-
     public static synchronized void setCurrentScope(String scope) {
         currentScope = scope == null ? "" : scope;
     }
@@ -269,7 +268,6 @@ public final class CalloutHistory {
         awaitingAfter.clear();
         pendingPings.clear();
     }
-
 
     private static void writeAtomically(Path path, Object value) throws IOException {
         Files.createDirectories(path.getParent());
@@ -293,9 +291,6 @@ public final class CalloutHistory {
         }
     }
 
-
-
-
     public static synchronized void clear() {
         chatBuffer.clear();
         pings.clear();
@@ -306,7 +301,7 @@ public final class CalloutHistory {
             Files.deleteIfExists(HISTORY_PATH);
             Files.deleteIfExists(HISTORY_BACKUP_PATH);
         } catch (IOException exception) {
-            CalloutClient.LOGGER.warn("Failed to clear persisted callout history", exception);
+            CalloutClient.LOGGER.warn("Could not clear the saved ping history", exception);
         }
     }
 

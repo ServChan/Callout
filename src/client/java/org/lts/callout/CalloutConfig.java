@@ -63,7 +63,7 @@ public class CalloutConfig {
         try (Reader reader = Files.newBufferedReader(path)) {
             return GSON.fromJson(reader, CalloutConfig.class);
         } catch (IOException | RuntimeException exception) {
-            CalloutClient.LOGGER.warn("Failed to load {}", path, exception);
+            CalloutClient.LOGGER.warn("Could not read {}; using defaults", path, exception);
             return null;
         }
     }
@@ -81,7 +81,7 @@ public class CalloutConfig {
                 return load();
             }
         } catch (IOException exception) {
-            CalloutClient.LOGGER.warn("Failed to check {}", CONFIG_PATH, exception);
+            CalloutClient.LOGGER.warn("Could not check {} for changes", CONFIG_PATH, exception);
         }
 
         return instance;
@@ -107,11 +107,11 @@ public class CalloutConfig {
             lastModified = Files.getLastModifiedTime(CONFIG_PATH).toMillis();
             return true;
         } catch (IOException exception) {
-            CalloutClient.LOGGER.warn("Failed to save {}", CONFIG_PATH, exception);
+            CalloutClient.LOGGER.warn("Could not save {}", CONFIG_PATH, exception);
             try {
                 Files.deleteIfExists(temporary);
             } catch (IOException cleanupException) {
-                CalloutClient.LOGGER.debug("Failed to clean temporary config {}", temporary, cleanupException);
+                CalloutClient.LOGGER.debug("Could not delete temporary file {}", temporary, cleanupException);
             }
             return false;
         }
@@ -148,7 +148,7 @@ public class CalloutConfig {
             }
             replace(temporary, CONFIG_PATH);
         } catch (IOException exception) {
-            CalloutClient.LOGGER.warn("Failed to create {}", CONFIG_PATH, exception);
+            CalloutClient.LOGGER.warn("Could not create {}", CONFIG_PATH, exception);
         }
     }
 
@@ -171,7 +171,7 @@ public class CalloutConfig {
         try {
             return Files.exists(CONFIG_PATH) ? Files.getLastModifiedTime(CONFIG_PATH).toMillis() : -1L;
         } catch (IOException exception) {
-            CalloutClient.LOGGER.debug("Failed to read modification time for {}", CONFIG_PATH, exception);
+            CalloutClient.LOGGER.debug("Could not read the modification time of {}", CONFIG_PATH, exception);
             return -1L;
         }
     }
