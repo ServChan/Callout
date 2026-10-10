@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CalloutConfig {
-    public static final int MAX_CHAT_HISTORY = 16384;
-
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("callout.json");
     private static final Path BACKUP_PATH = CONFIG_PATH.resolveSibling(CONFIG_PATH.getFileName() + ".bak");

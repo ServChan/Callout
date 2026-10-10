@@ -39,7 +39,6 @@ public class CalloutClient implements ClientModInitializer {
     private String lastScope = "";
     private int tickCount = 0;
     private int historyFlushTicks = 0;
-    private boolean disconnected = true;
 
     private static final Pattern SENDER_CHAT_PATTERN = Pattern.compile("(?:^|.*?[\\s\\[\\]<>👤])([a-zA-Z0-9_]{3,16})\\s*[:»>|-]+\\s*(.*)");
     private static final Pattern SENDER_USERNAME_PATTERN = Pattern.compile("([a-zA-Z0-9_]{3,16})");
@@ -69,7 +68,6 @@ public class CalloutClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(this::handleClientTick);
         ClientLifecycleEvents.CLIENT_STOPPING.register(minecraft -> {
             if (wasInWorld) {
-                CalloutHistory.saveSessionBuffer(lastScope);
                 CalloutHistory.save();
             }
         });
@@ -154,7 +152,6 @@ public class CalloutClient implements ClientModInitializer {
         boolean isInWorld = minecraft.level != null && minecraft.player != null;
 
         if (!isInWorld && minecraft.getConnection() == null) {
-            disconnected = true;
             WorldScopeTracker.clear();
         }
 
@@ -163,33 +160,12 @@ public class CalloutClient implements ClientModInitializer {
             CalloutHistory.setCurrentScope(scope);
             CalloutConfig config = CalloutConfig.loadIfChanged();
 
-            if (!wasInWorld) {
-                if (!lastScope.isBlank() && !lastScope.equals(scope) && config.clearHistoryOnScopeChange) {
-                    CalloutHistory.clear();
-                } else if (disconnected) {
-                    CalloutHistory.loadSessionBuffer(scope);
-                    CalloutHistory.isRestoringChat = true;
-                    for (CalloutHistory.ChatLine line : CalloutHistory.getChatBuffer()) {
-                        if (line.component() != null) {
-                            try {
-                                minecraft.player.sendSystemMessage(line.component());
-                            } catch (Exception e) {
-                                LOGGER.warn("Failed to inject historical chat message", e);
-                            }
-                        }
-                    }
-                    CalloutHistory.isRestoringChat = false;
-                }
-                disconnected = false;
-            } else if (!lastScope.isBlank() && !lastScope.equals(scope)) {
-                CalloutHistory.saveSessionBuffer(lastScope);
+            if (!lastScope.isBlank() && !lastScope.equals(scope)) {
                 CalloutHistory.save();
-
                 if (config.clearHistoryOnScopeChange) {
                     CalloutHistory.clear();
                 } else {
-                    CalloutHistory.resetSessionBuffer();
-                    CalloutHistory.loadSessionBuffer(scope);
+                    CalloutHistory.resetChatBuffer();
                 }
             }
             lastScope = scope;
@@ -203,12 +179,10 @@ public class CalloutClient implements ClientModInitializer {
             tickCount++;
             if (tickCount >= 1200) {
                 tickCount = 0;
-                CalloutHistory.saveSessionBuffer(lastScope);
                 CalloutHistory.save();
             }
         }
         if (wasInWorld && !isInWorld) {
-            CalloutHistory.saveSessionBuffer(lastScope);
             CalloutHistory.save();
         }
         wasInWorld = isInWorld;
