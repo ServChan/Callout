@@ -3,7 +3,7 @@
 [![Minecraft Version](https://img.shields.io/badge/Minecraft-26.3-brightgreen?style=flat-square&logo=minecraft)](README.md)
 [![Platform](https://img.shields.io/badge/Platform-Fabric-blue?style=flat-square&logo=fabric)](README.md)
 [![Java Target](https://img.shields.io/badge/Java-25-orange?style=flat-square&logo=openjdk)](README.md)
-[![Mod Version](https://img.shields.io/badge/Version-1.2.0-purple?style=flat-square)](README.md)
+[![Mod Version](https://img.shields.io/badge/Version-1.1.1-purple?style=flat-square)](README.md)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
 Client-side Fabric mod that watches chat for text/regex triggers, plays configurable audio alerts, and keeps a persistent history of mentions with nearby context.
@@ -26,7 +26,7 @@ Client-side Fabric mod that watches chat for text/regex triggers, plays configur
 - плавная навигация с пагинацией и колесом мыши;
 - персистентное сохранение истории между выходами из мира и перезапусками игры.
 
-С версии 1.2.0 Callout больше не увеличивает историю чата и не возвращает чат после перезахода: эти функции перенесены в [QualityEssentials](../QualityEssentials/README.md), раздел «Чат». Старая папка `config/callout_sessions/` больше не используется, её можно удалить.
+С версии 1.1.1 Callout больше не увеличивает историю чата и не возвращает чат после перезахода: эти функции перенесены в [QualityEssentials](../QualityEssentials/README.md), раздел «Чат». Старая папка `config/callout_sessions/` больше не используется, её можно удалить.
 
 ### Управление
 
@@ -43,7 +43,7 @@ Client-side Fabric mod that watches chat for text/regex triggers, plays configur
 ### Установка
 
 1. **Fabric Loader** `0.19.3+` и **Fabric API**.
-2. Скопируйте `callout-1.2.0.jar` из `build/libs/` в папку `mods/`.
+2. Скопируйте `callout-1.1.1.jar` из `build/libs/` в папку `mods/`.
 3. **Mod Menu** — опционально, открывает экран настроек.
 
 **Требования:** Minecraft `26.3` · Java `25` · только клиент.
@@ -54,7 +54,7 @@ Client-side Fabric mod that watches chat for text/regex triggers, plays configur
 .\gradlew.bat clean build
 ```
 
-Готовый JAR: `build/libs/callout-1.2.0.jar`.
+Готовый JAR: `build/libs/callout-1.1.1.jar`.
 
 ---
 
@@ -76,7 +76,7 @@ Client-side Fabric mod that watches chat for text/regex triggers, plays configur
 - smooth navigation with pagination and mouse-wheel scrolling;
 - persistent history that survives exiting worlds and restarting the game.
 
-Since 1.2.0 Callout no longer extends chat scrollback or restores chat after rejoining: both moved to [QualityEssentials](../QualityEssentials/README.md), "Chat" section. The old `config/callout_sessions/` folder is no longer used and can be deleted.
+Since 1.1.1 Callout no longer extends chat scrollback or restores chat after rejoining: both moved to [QualityEssentials](../QualityEssentials/README.md), "Chat" section. The old `config/callout_sessions/` folder is no longer used and can be deleted.
 
 ### Controls
 
@@ -93,7 +93,7 @@ Files: `config/callout.json` (settings) and `config/callout_history.json` (histo
 ### Installation
 
 1. **Fabric Loader** `0.19.3+` and **Fabric API**.
-2. Copy `callout-1.2.0.jar` from `build/libs/` into `mods/`.
+2. Copy `callout-1.1.1.jar` from `build/libs/` into `mods/`.
 3. **Mod Menu** — optional, opens the settings screen.
 
 **Requirements:** Minecraft `26.3` · Java `25` · client-only.
@@ -104,7 +104,7 @@ Files: `config/callout.json` (settings) and `config/callout_history.json` (histo
 .\gradlew.bat clean build
 ```
 
-Output JAR: `build/libs/callout-1.2.0.jar`.
+Output JAR: `build/libs/callout-1.1.1.jar`.
 
 ## Лицензия / License
 
