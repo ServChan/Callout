@@ -186,6 +186,9 @@ public class CalloutHistoryScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (getChildAt(event.x(), event.y()).isPresent()) {
+            return super.mouseClicked(event, doubleClick);
+        }
 
         if (closeButton != null && closeButton.mouseClicked(event, doubleClick)) {
             return true;
