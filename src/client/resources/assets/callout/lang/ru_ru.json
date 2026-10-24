@@ -1,6 +1,6 @@
 {
   "modmenu.nameTranslation.callout": "Callout",
-  "modmenu.descriptionTranslation.callout": "Клиентские уведомления по чату, история AFK-упоминаний с контекстом, regex-триггеры и расширенная прокрутка чата.",
+  "modmenu.descriptionTranslation.callout": "Клиентские уведомления по чату, история AFK-упоминаний с контекстом и regex-триггеры.",
   "modmenu.summaryTranslation.callout": "Уведомления и история упоминаний",
   "callout.screen.title": "Callout",
   "callout.section.main_trigger": "Основной триггер",

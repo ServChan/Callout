@@ -1,6 +1,6 @@
 {
   "modmenu.nameTranslation.callout": "Callout",
-  "modmenu.descriptionTranslation.callout": "Client-side chat alerts, AFK mention history with context, regex triggers, and extended chat scrollback.",
+  "modmenu.descriptionTranslation.callout": "Client-side chat alerts, AFK mention history with context and regex triggers.",
   "modmenu.summaryTranslation.callout": "Chat alerts and mention history",
   "callout.screen.title": "Callout",
   "callout.section.main_trigger": "Main trigger",

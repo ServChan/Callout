@@ -8,6 +8,8 @@
 
 Client-side Fabric mod that watches chat for text/regex triggers, plays configurable audio alerts, and keeps a persistent history of mentions with nearby context.
 
+**Руководство / User guide:** [Русский](docs/USER_GUIDE_RU.md) · [English](docs/USER_GUIDE_EN.md)
+
 ## Русский
 
 ### Что это
@@ -26,13 +28,13 @@ Client-side Fabric mod that watches chat for text/regex triggers, plays configur
 - плавная навигация с пагинацией и колесом мыши;
 - персистентное сохранение истории между выходами из мира и перезапусками игры.
 
-С версии 1.1.1 Callout больше не увеличивает историю чата и не возвращает чат после перезахода: эти функции перенесены в [QualityEssentials](../QualityEssentials/README.md), раздел «Чат». Старая папка `config/callout_sessions/` больше не используется, её можно удалить.
+С версии 1.1.1 Callout больше не увеличивает историю чата и не возвращает чат после перезахода: эти функции перенесены в [QualityEssentials](https://github.com/ServChan/QualityEssentials), раздел «Чат». Старая папка `config/callout_sessions/` больше не используется, её можно удалить.
 
 ### Управление
 
 | Действие | Клавиша по умолчанию | Переназначение |
 |---|---|---|
-| Открыть историю пингов | `'` (апостроф) | Options → Controls → Callout |
+| Открыть историю пингов | `'` (апостроф) | Настройки → Управление → Callout |
 
 ### Настройки
 
@@ -76,7 +78,7 @@ Client-side Fabric mod that watches chat for text/regex triggers, plays configur
 - smooth navigation with pagination and mouse-wheel scrolling;
 - persistent history that survives exiting worlds and restarting the game.
 
-Since 1.1.1 Callout no longer extends chat scrollback or restores chat after rejoining: both moved to [QualityEssentials](../QualityEssentials/README.md), "Chat" section. The old `config/callout_sessions/` folder is no longer used and can be deleted.
+Since 1.1.1 Callout no longer extends chat scrollback or restores chat after rejoining: both moved to [QualityEssentials](https://github.com/ServChan/QualityEssentials), "Chat" section. The old `config/callout_sessions/` folder is no longer used and can be deleted.
 
 ### Controls
 
